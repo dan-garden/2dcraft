@@ -1,0 +1,374 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, user-scalable=no" />
+<script src="js/jquery-latest.js"></script>
+<script>
+var non = ["air", "bedrock"];
+var north_break = ["yellow_flower", "red_flower", "gravel", "sand"];
+var block_width = 100;
+var top_min = 0;
+var top_max = 0;
+var left_min = 0;
+var left_max = block_width-1;
+
+$(window).load(function(){
+move(4, 0);
+$(document).keyup(function(e){if (e.keyCode == 37) {moveKey("left");return false;}});
+$(document).keyup(function(e){if (e.keyCode == 38) {moveKey("up");return false;}});
+$(document).keyup(function(e){if (e.keyCode == 39) {moveKey("right");return false;}});
+$(document).keyup(function(e){if (e.keyCode == 40) {moveKey("down");return false;}});
+
+});
+
+function moveKey(key)
+{
+currentTop = parseInt($(".player").attr("data-top"));
+currentLeft = parseInt($(".player").attr("data-left"));
+var newTop;
+var newLeft;
+
+if(key=="left")
+{
+newTop = currentTop;
+newLeft = currentLeft-1;
+if(currentLeft == 0)
+{
+newLeft = left_max;
+}
+}
+
+if(key=="up")
+{
+newTop = currentTop-1;
+newLeft = currentLeft;
+if(currentTop == 0)
+{
+newTop = currentTop;
+}
+}
+
+if(key=="right")
+{
+newTop = currentTop;
+newLeft = currentLeft+1;
+if(currentLeft == left_max)
+{
+newLeft = 0;
+}
+}
+
+if(key=="down")
+{
+newTop = currentTop+1;
+newLeft = currentLeft;
+}
+
+move(newTop, newLeft);
+
+
+}
+
+function random(mmm,nnn)
+{
+    mmm = parseInt(mmm);
+    nnn = parseInt(nnn);
+    return Math.floor( Math.random() * (nnn - mmm + 1) ) + mmm;
+}
+
+ function move(top, left)
+  {
+  if($("#"+top+"-"+left).attr("data-block")!="bedrock")
+  {
+  $(".block").removeClass("player");
+  breakBlock($("#"+top+"-"+left));
+  $("#"+top+"-"+left).addClass("player");
+  }
+  }
+
+
+  var inv_id = 0;
+  function breakBlock(x)
+  {
+if(x.attr("data-broken")!="true")
+{
+inv_id++;
+var type = x.attr("data-sound");
+var b_type = x.attr("data-block");
+
+if($.inArray(b_type, non) == -1)
+{
+document.getElementById("sound_"+type).play();
+$("#inventory").append('<div id="inv_'+inv_id+'" class="slot block '+b_type+' fix"></div>');
+x.removeClass(b_type);
+x.addClass("air");
+x.attr("data-broken", "true");
+}
+ var topp = parseInt(x.attr("data-top"));
+ var leftt = parseInt(x.attr("data-left"));
+ 
+ var north = $("#"+(topp-1)+'-'+(leftt));
+ var east = $("#"+(topp)+'-'+(leftt+1));
+ var south = $("#"+(topp+1)+'-'+(leftt));
+ var west = $("#"+(topp)+'-'+(leftt-1));
+ 
+ if($.inArray(b_type, non) == -1)
+ {
+ if($.inArray(north.attr("data-block"), north_break) != -1)
+ {
+ breakBlock(north);
+ }
+ breakBlock(x);
+ }
+}
+}
+
+$(function(){
+var elll = [
+"air",
+"air",
+"air",
+"air",
+"air-air-air-air-air-air-air-air-air-air-air-air-air-air-air-air-air-air-air-air-air-air-air-red_flower-yellow_flower-pumpkin",
+"grass",
+"dirt",
+"dirt",
+"dirt-stone",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold-diamond",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold-diamond",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold-diamond",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold-diamond",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold-diamond",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold-diamond",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold-diamond",
+"gravel-dirt-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-stone-coal-iron-lapis-gold-diamond-emerald",
+"gravel-dirt-stone-stone-stone-stone-bedrock",
+"stone-bedrock",
+"bedrock"
+];
+top_max = elll.length-1;
+for (var iii=0;iii<elll.length+1;iii++)
+  {
+ $("#world").append("<tr>");
+ 
+ for (var jjj=0;jjj<block_width;jjj++)
+  {
+ var level = elll[iii].split('-');
+ var block_type = level[random(0, level.length-1)];
+ var sound_type;
+ switch (block_type){
+case "sand": 
+sound_type = "sand";
+break;
+case "stone": 
+sound_type = "stone";
+break;
+case "red_flower": 
+sound_type = "grass";
+break;
+case "yellow_flower": 
+sound_type = "grass";
+break;
+case "pumpkin": 
+sound_type = "wood";
+break;
+case "dirt": 
+sound_type = "gravel";
+break;
+case "grass": 
+sound_type = "grass";
+break;
+case "gravel": 
+sound_type = "gravel";
+break;
+case "coal": 
+sound_type = "stone";
+break;
+case "gold": 
+sound_type = "stone";
+break;
+case "iron": 
+sound_type = "stone";
+break;
+case "lapis": 
+sound_type = "stone";
+break;
+case "emerald": 
+sound_type = "stone";
+break;
+case "diamond": 
+sound_type = "stone";
+break;
+case "redstone": 
+sound_type = "stone";
+break;
+
+case "air":
+sound_type = "none";
+break;
+ }
+ 
+ $("#world").append('<td id="'+iii+'-'+jjj+'" data-sound="'+sound_type+"_"+random(1, 4)+'" data-left="'+jjj+'" data-top="'+iii+'" data-block="'+block_type+'" class="block '+block_type+'"></td>');
+  }
+  
+ $("#world").append("</tr>");
+  }
+
+});
+</script>
+<style>
+body{margin:0;}
+table
+{
+border-collapse:collapse;
+}
+
+table, td, th
+{
+border:none;
+}
+
+#world
+{
+-webkit-touch-callout: none;
+-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+}
+
+.block
+{
+height:16px;
+width:14px;
+-webkit-touch-callout: none;
+-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+}
+
+.block:hover
+{
+-moz-box-shadow: inset 0 0 5px #888;
+-webkit-box-shadow: inset 0 0 5px #888;
+box-shadow: inner 0 0 5px #888;
+}
+
+.fix{width:16px;height:16px;}
+
+
+.cloud{background-color:white;}
+.air{background-color:#BFF1FF;}
+.red_flower{background-color:#BFF1FF;background-image:url(img/blocks/flower_rose.png);}
+.yellow_flower{background-color:#BFF1FF;background-image:url(img/blocks/flower_dandelion.png);}
+.pumpkin{background-image:url(img/blocks/pumpkin_face_off.png);}
+.dirt{background-image:url(img/blocks/dirt.png)}
+.grass{background-image:url(img/blocks/grass_side.png)}
+.sand{background-image:url(img/blocks/sand.png)}
+.stone{background-image:url(img/blocks/stone.png)}
+.bedrock{background-image:url(img/blocks/bedrock.png)}
+.gravel{background-image:url(img/blocks/gravel.png)}
+.coal{background-image:url(img/blocks/coal_ore.png)}
+.gold{background-image:url(img/blocks/gold_ore.png)}
+.iron{background-image:url(img/blocks/iron_ore.png)}
+.lapis{background-image:url(img/blocks/lapis_ore.png)}
+.emerald{background-image:url(img/blocks/emerald_ore.png)}
+.diamond{background-image:url(img/blocks/diamond_ore.png)}
+.redstone{background-image:url(img/blocks/redstone_ore.png)}
+
+.slot
+{
+display:inline-block;
+}
+
+#inventory
+{
+position:fixed;
+top:0;
+right:0;
+width:160px;
+border:solid 1px black;
+height:auto;
+}
+
+
+
+.player
+{
+background-image:url(img/blocks/player.png);
+}
+
+</style>
+</head>
+<body>
+<!--SOUNDS-->
+<audio id="sound_cloth_1"><source src="audio/cloth1.ogg"></source></audio>
+<audio id="sound_cloth_2"><source src="audio/cloth2.ogg"></source></audio>
+<audio id="sound_cloth_3"><source src="audio/cloth3.ogg"></source></audio>
+<audio id="sound_cloth_4"><source src="audio/cloth4.ogg"></source></audio>
+
+<audio id="sound_grass_1"><source src="audio/grass1.ogg"></source></audio>
+<audio id="sound_grass_2"><source src="audio/grass2.ogg"></source></audio>
+<audio id="sound_grass_3"><source src="audio/grass3.ogg"></source></audio>
+<audio id="sound_grass_4"><source src="audio/grass4.ogg"></source></audio>
+
+<audio id="sound_gravel_1"><source src="audio/gravel1.ogg"></source></audio>
+<audio id="sound_gravel_2"><source src="audio/gravel2.ogg"></source></audio>
+<audio id="sound_gravel_3"><source src="audio/gravel3.ogg"></source></audio>
+<audio id="sound_gravel_4"><source src="audio/gravel4.ogg"></source></audio>
+
+<audio id="sound_sand_1"><source src="audio/sand1.ogg"></source></audio>
+<audio id="sound_sand_2"><source src="audio/sand2.ogg"></source></audio>
+<audio id="sound_sand_3"><source src="audio/sand3.ogg"></source></audio>
+<audio id="sound_sand_4"><source src="audio/sand4.ogg"></source></audio>
+
+<audio id="sound_snow_1"><source src="audio/snow1.ogg"></source></audio>
+<audio id="sound_snow_2"><source src="audio/snow2.ogg"></source></audio>
+<audio id="sound_snow_3"><source src="audio/snow3.ogg"></source></audio>
+<audio id="sound_snow_4"><source src="audio/snow4.ogg"></source></audio>
+
+<audio id="sound_stone_1"><source src="audio/stone1.ogg"></source></audio>
+<audio id="sound_stone_2"><source src="audio/stone2.ogg"></source></audio>
+<audio id="sound_stone_3"><source src="audio/stone3.ogg"></source></audio>
+<audio id="sound_stone_4"><source src="audio/stone4.ogg"></source></audio>
+
+<audio id="sound_wood_1"><source src="audio/wood1.ogg"></source></audio>
+<audio id="sound_wood_2"><source src="audio/wood2.ogg"></source></audio>
+<audio id="sound_wood_3"><source src="audio/wood3.ogg"></source></audio>
+<audio id="sound_wood_4"><source src="audio/wood4.ogg"></source></audio>
+
+
+<!--SOUNDS-->
+
+
+<table>
+<tbody id="world">
+
+</tbody>
+</table>
+<br />
+<div id="inventory">
+
+</div>
+</body>
+</html>
+
+
+
