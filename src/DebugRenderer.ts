@@ -274,28 +274,14 @@ export class DebugRenderer {
     const playerCenterX = player.x + player.width / 2 - camera.x;
     const playerCenterY = player.y + player.height / 2 - camera.y;
 
-    // Use pulse timer to create a pulsing effect
-    const pulseSize = Math.sin(this.pulseTimer) * 2;
-    const pulseAlpha = 0.5 + Math.sin(this.pulseTimer) * 0.3;
-
-    // Draw a circle representing the digging radius with better visibility when digging
-    this.digRadiusGraphics.stroke({ width: 2, color: 0x00FF00, alpha: pulseAlpha });
+    // Draw a simple, stable circle representing the digging radius
+    // Remove the pulsing effect to avoid glitchiness
+    this.digRadiusGraphics.stroke({ width: 1.5, color: 0x00FF00, alpha: 0.4 });
     this.digRadiusGraphics.circle(playerCenterX, playerCenterY, MAX_DIG_RADIUS);
 
-    // Add inner circle with pulse effect
+    // Add a small inner circle to better indicate the player's position
     this.digRadiusGraphics.stroke({ width: 1, color: 0xFFFFFF, alpha: 0.3 });
-    this.digRadiusGraphics.circle(playerCenterX, playerCenterY, MAX_DIG_RADIUS - 5 + pulseSize);
-
-    // In debug mode, also display the range in tiles
-    if (this.showDebug) {
-      // Show distance indicator
-      const tileRadius = Math.floor(MAX_DIG_RADIUS / TILE_SIZE);
-      const text = new Text(`${tileRadius} tiles`);
-      text.style.fontSize = 10;
-      text.style.fill = 0x00FF00;
-      text.position.set(playerCenterX + MAX_DIG_RADIUS + 5, playerCenterY);
-      this.digRadiusGraphics.addChild(text);
-    }
+    this.digRadiusGraphics.circle(playerCenterX, playerCenterY, 8);
   }
 
   private updateInfoText(player: Player, chunkManager: ChunkManager, camera: Camera, stats: any) {

@@ -4,6 +4,7 @@ import { Block, blockRegistry } from './blocks';
 
 export class Chunk {
   tileIds: number[][] = [];
+  blockInstances: Map<string, Block> = new Map(); // Store actual block instances
   sprite: Sprite | null = null;
   texture: RenderTexture | null = null;
   needsUpdate = true;
@@ -12,9 +13,54 @@ export class Chunk {
 
   constructor(public cx: number, public cy: number, private noise2D: (x: number, y: number) => number) { }
 
+  // Process game tick for all blocks in this chunk
+  processGameTick(deltaTime: number): void {
+    if (!this.isGenerated) return;
+
+    // Process game tick for each block instance
+    for (const [key, blockInstance] of this.blockInstances.entries()) {
+      const needsUpdate = blockInstance.onGameTick(deltaTime);
+      if (needsUpdate) {
+        this.needsUpdate = true;
+      }
+    }
+  }
+
+  // Check if a player is walking over any blocks in this chunk
+  checkPlayerWalkOver(player: any): void {
+    if (!this.isGenerated) return;
+
+    // Calculate which tiles the player is touching
+    const playerFeetY = player.y + player.height;
+    const playerCenterX = player.x + player.width / 2;
+
+    // Convert to local chunk coordinates
+    const localX = Math.floor((playerCenterX - this.cx * CHUNK_SIZE * TILE_SIZE) / TILE_SIZE);
+    const localY = Math.floor((playerFeetY - this.cy * CHUNK_SIZE * TILE_SIZE) / TILE_SIZE);
+
+    // Ignore if player is outside this chunk
+    if (localX < 0 || localX >= CHUNK_SIZE || localY < 0 || localY >= CHUNK_SIZE) {
+      return;
+    }
+
+    // Get the key for the block at player's feet
+    const blockKey = `${localX},${localY}`;
+
+    // If there's a block instance, call its onPlayerWalkOver method
+    if (this.blockInstances.has(blockKey)) {
+      const blockInstance = this.blockInstances.get(blockKey)!;
+      const needsUpdate = blockInstance.onPlayerWalkOver(player);
+      if (needsUpdate) {
+        this.needsUpdate = true;
+      }
+    }
+  }
+
   generate() {
     // Initialize empty tile array
     this.tileIds = Array(CHUNK_SIZE).fill(null).map(() => Array(CHUNK_SIZE).fill(blockRegistry.air.id));
+    // Clear any previous block instances
+    this.blockInstances.clear();
 
     for (let y = 0; y < CHUNK_SIZE; y++) {
       for (let x = 0; x < CHUNK_SIZE; x++) {
@@ -54,6 +100,34 @@ export class Chunk {
         }
 
         this.tileIds[y][x] = blockId;
+
+        // Create and store an actual block instance for non-air blocks
+        if (blockId !== blockRegistry.air.id) {
+          const block = blockRegistry.getBlockById(blockId);
+          // Create a new instance to avoid sharing state
+          const blockInstance = Object.create(Object.getPrototypeOf(block));
+          Object.assign(blockInstance, block);
+
+          // Set block position properties
+          const actualWorldX = this.cx * CHUNK_SIZE * TILE_SIZE + x * TILE_SIZE;
+          const actualWorldY = this.cy * CHUNK_SIZE * TILE_SIZE + y * TILE_SIZE;
+          blockInstance.updatePosition(actualWorldX, actualWorldY);
+          blockInstance.chunkX = this.cx;
+          blockInstance.chunkY = this.cy;
+          blockInstance.tileX = x;
+          blockInstance.tileY = y;
+
+          // Call onPlace event
+          blockInstance.onPlace(actualWorldX, actualWorldY);
+
+          // Store block instance
+          this.blockInstances.set(`${x},${y}`, blockInstance);
+
+          // Calculate sunlight for blocks on the surface
+          if (worldY === height) {
+            blockInstance.isInDirectSunlight = true;
+          }
+        }
       }
     }
 
@@ -85,15 +159,30 @@ export class Chunk {
     for (let y = 0; y < CHUNK_SIZE; y++) {
       for (let x = 0; x < CHUNK_SIZE; x++) {
         const blockId = this.tileIds[y][x];
-        const block = blockRegistry.getBlockById(blockId);
-        if (block.id === blockRegistry.air.id) continue;
+        const blockKey = `${x},${y}`;
 
-        tempGraphics.fill({ color: block.color });
-        tempGraphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        // Skip air blocks
+        if (blockId === blockRegistry.air.id) continue;
+
+        let customRendered = false;
+
+        // If we have a block instance, use it for rendering
+        if (this.blockInstances.has(blockKey)) {
+          const blockInstance = this.blockInstances.get(blockKey)!;
+          customRendered = blockInstance.onRender(tempGraphics, x, y, TILE_SIZE);
+        }
+
+        // If not custom rendered, use default rendering
+        if (!customRendered) {
+          const block = blockRegistry.getBlockById(blockId);
+          tempGraphics.fill({ color: block.color });
+          tempGraphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
 
         // Special handling for the bottom-right tile to ensure it renders properly
         // Draw it with a slight overlap to address potential rendering issues at chunk boundaries
         if (x === CHUNK_SIZE - 1 && y === CHUNK_SIZE - 1) {
+          const block = blockRegistry.getBlockById(blockId);
           tempGraphics.fill({ color: block.color });
           tempGraphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE + 0.5, TILE_SIZE + 0.5);
         }
@@ -126,6 +215,12 @@ export class Chunk {
     if (x < 0 || x >= CHUNK_SIZE || y < 0 || y >= CHUNK_SIZE || !this.isGenerated) {
       return blockRegistry.air;
     }
+
+    const blockKey = `${x},${y}`;
+    if (this.blockInstances.has(blockKey)) {
+      return this.blockInstances.get(blockKey)!;
+    }
+
     const blockId = this.tileIds[y][x];
     return blockRegistry.getBlockById(blockId);
   }
@@ -136,8 +231,41 @@ export class Chunk {
       return false;
     }
 
+    const blockKey = `${x},${y}`;
+    const oldBlockId = this.tileIds[y][x];
+
+    // Call onRemove for the old block if it exists
+    if (this.blockInstances.has(blockKey)) {
+      const oldBlock = this.blockInstances.get(blockKey)!;
+      oldBlock.onRemove();
+      this.blockInstances.delete(blockKey);
+    }
+
     // Set the new block ID
     this.tileIds[y][x] = blockId;
+
+    // Create a new block instance for non-air blocks
+    if (blockId !== blockRegistry.air.id) {
+      const block = blockRegistry.getBlockById(blockId);
+      // Create a new instance to avoid sharing state
+      const blockInstance = Object.create(Object.getPrototypeOf(block));
+      Object.assign(blockInstance, block);
+
+      // Set block position properties
+      const actualWorldX = this.cx * CHUNK_SIZE * TILE_SIZE + x * TILE_SIZE;
+      const actualWorldY = this.cy * CHUNK_SIZE * TILE_SIZE + y * TILE_SIZE;
+      blockInstance.updatePosition(actualWorldX, actualWorldY);
+      blockInstance.chunkX = this.cx;
+      blockInstance.chunkY = this.cy;
+      blockInstance.tileX = x;
+      blockInstance.tileY = y;
+
+      // Call onPlace event
+      blockInstance.onPlace(actualWorldX, actualWorldY);
+
+      // Store block instance
+      this.blockInstances.set(blockKey, blockInstance);
+    }
 
     // Mark chunk for update so it will be redrawn
     this.needsUpdate = true;

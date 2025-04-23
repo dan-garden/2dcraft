@@ -16,7 +16,7 @@ export class Player {
   prevY = 0;
   // Track maximum jump height
   jumpStartY = 0;
-  maxJumpHeight = TILE_SIZE * 2;
+  maxJumpHeight = TILE_SIZE * 2.5;
   jumping = false;
 
   // Player physics properties with more natural values
@@ -24,7 +24,8 @@ export class Player {
   maxSpeed = 4;           // Maximum horizontal speed
   acceleration = 0.2;     // How quickly player accelerates
   deceleration = 0.3;     // How quickly player decelerates when not pressing keys
-  jumpStrength = 6;       // Jump initial velocity
+  baseJumpStrength = 5.5;  // Base jump strength when standing still
+  runJumpBonus = 1.0;     // Additional jump strength when running
   airControl = 0.1;       // Reduced control in air (multiplier for acceleration)
 
   constructor() {
@@ -54,6 +55,7 @@ export class Player {
     // Handle horizontal movement with acceleration and deceleration
     const moveLeft = keys['ArrowLeft'] || keys['a'];
     const moveRight = keys['ArrowRight'] || keys['d'];
+    const jumpKeyPressed = keys['ArrowUp'] || keys['w'] || keys[' '];
 
     // Determine acceleration based on ground vs air
     const currentAccel = this.grounded ? this.acceleration : this.acceleration * this.airControl;
@@ -88,15 +90,22 @@ export class Player {
     // Apply gravity
     if (!this.grounded) {
       this.vy += this.gravity;
-    } else if (keys['ArrowUp'] || keys['w'] || keys[' ']) {
+    } else if (jumpKeyPressed) {
+      // Calculate jump strength based on horizontal movement
+      // Running jumps are higher than standing jumps
+      const horizontalSpeed = Math.abs(this.vx);
+      const speedBonus = Math.min(horizontalSpeed / this.maxSpeed, 1.0) * this.runJumpBonus;
+
+      // Apply the jump velocity
+      this.vy = -(this.baseJumpStrength + speedBonus);
+
       // Start jump
-      this.vy = -this.jumpStrength;
       this.grounded = false;
       this.jumping = true;
       this.jumpStartY = this.y;
     }
 
-    // Limit jump height
+    // Limit jump height but preserve horizontal momentum
     if (this.jumping && this.y < this.jumpStartY - this.maxJumpHeight) {
       this.vy = Math.max(this.vy, 0); // Stop rising if max height reached
       this.jumping = false;
@@ -345,7 +354,7 @@ export class Player {
   }
 
   // Method to dig blocks at a specific world position within a radius
-  digBlockAtPosition(worldX: number, worldY: number, chunks: Map<string, Chunk>): boolean {
+  digBlockAtPosition(worldX: number, worldY: number, chunks: Map<string, Chunk>, keys?: Record<string, boolean>): boolean {
     // Get player's center position
     const playerCenterX = this.x + this.width / 2;
     const playerCenterY = this.y + this.height / 2;
@@ -384,7 +393,7 @@ export class Player {
     // Get the block at the target position
     const block = chunk.getTile(tileX, tileY);
 
-    // If it's not air (already dug) and is solid, replace it with air
+    // Regular digging behavior - if it's not air (already dug) and is solid, replace it with air
     if (block.id !== blockRegistry.air.id && block.isCollidable()) {
       return chunk.setTile(tileX, tileY, blockRegistry.air.id);
     }

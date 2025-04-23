@@ -24,6 +24,10 @@ export class ChunkManager {
   private lastPlayerChunkY: number = 0;
   private playerDirection: number = DIRECTION.NONE;
 
+  // Timestamp for game ticks
+  private lastTickTime: number = 0;
+  private tickInterval: number = 1000; // Default tick interval in milliseconds (1 second)
+
   constructor(app: Application, noise2D: (x: number, y: number) => number) {
     this.app = app;
     this.noise2D = noise2D;
@@ -320,5 +324,57 @@ export class ChunkManager {
   updateChunkPositions(cameraX: number, cameraY: number): void {
     // Move the entire world container to offset by camera position
     this.worldContainer.position.set(-cameraX, -cameraY);
+  }
+
+  /**
+   * Process game tick for all active chunks
+   * @param currentTime Current timestamp in milliseconds
+   * @param player Player instance for player-block interactions
+   */
+  processGameTick(currentTime: number, player: any): void {
+    // Check if it's time for a new tick
+    const deltaTime = currentTime - this.lastTickTime;
+
+    if (deltaTime >= this.tickInterval) {
+      // Calculate center chunk based on player position
+      const playerChunkX = Math.floor(player.x / (CHUNK_SIZE * TILE_SIZE));
+      const playerChunkY = Math.floor(player.y / (CHUNK_SIZE * TILE_SIZE));
+
+      // Define active area around player (5x5 chunks)
+      const activeDistance = 2;
+
+      // Process ticks for chunks in this active area
+      for (let y = playerChunkY - activeDistance; y <= playerChunkY + activeDistance; y++) {
+        for (let x = playerChunkX - activeDistance; x <= playerChunkX + activeDistance; x++) {
+          const key = this.getChunkKey(x, y);
+          if (this.chunks.has(key)) {
+            const chunk = this.chunks.get(key)!;
+            // Process game tick for this chunk
+            chunk.processGameTick(deltaTime);
+
+            // Check if player is walking over blocks in this chunk
+            chunk.checkPlayerWalkOver(player);
+
+            // If chunk needs update after processing, redraw it
+            if (chunk.needsUpdate) {
+              chunk.createTexture(this.app);
+            }
+          }
+        }
+      }
+
+      // Update tick timestamp
+      this.lastTickTime = currentTime;
+    }
+  }
+
+  /**
+   * Set the game tick interval
+   * @param interval Interval in milliseconds
+   */
+  setTickInterval(interval: number): void {
+    if (interval > 0) {
+      this.tickInterval = interval;
+    }
   }
 } 

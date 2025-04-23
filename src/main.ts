@@ -15,6 +15,7 @@ interface Stats {
   playerPos: { x: number, y: number };
   cameraPos: { x: number, y: number };
   queuedChunks: number;
+  lastGameTick: number;
 }
 
 // Asynchronous IIFE
@@ -42,6 +43,9 @@ interface Stats {
   const chunkManager = new ChunkManager(app, noise2D);
   const camera = new Camera(app);
   const player = new Player();
+
+  // Configure game tick interval (milliseconds)
+  chunkManager.setTickInterval(1000); // 1 second between ticks
 
   // Create player container - this should be added AFTER the chunk container
   // so the player appears on top of the terrain
@@ -82,6 +86,7 @@ interface Stats {
   let frameCount = 0;
   let lastPlayerX = player.x;
   let lastPlayerY = player.y;
+  let lastTickTime = Date.now();
 
   // Update player position relative to camera
   function updatePlayerPosition() {
@@ -96,7 +101,8 @@ interface Stats {
     visibleChunks: 0,
     playerPos: { x: 0, y: 0 },
     cameraPos: { x: 0, y: 0 },
-    queuedChunks: 0
+    queuedChunks: 0,
+    lastGameTick: 0
   };
 
   function updateStats() {
@@ -113,6 +119,7 @@ interface Stats {
       // Log stats
       console.log('FPS:', stats.fps, 'Chunks:', stats.chunkCount, 'Visible:', stats.visibleChunks);
       console.log(`Player at (${player.x}, ${player.y}), grounded: ${player.grounded}`);
+      console.log(`Last game tick: ${stats.lastGameTick}ms ago`);
     }
   }
 
@@ -155,7 +162,8 @@ interface Stats {
       const didDig = player.digBlockAtPosition(
         hoverTile.x * TILE_SIZE,
         hoverTile.y * TILE_SIZE,
-        chunkManager.chunks
+        chunkManager.chunks,
+        keys
       );
 
       // If the dig was successful, update the chunk texture
@@ -188,6 +196,8 @@ interface Stats {
   // Game loop
   app.ticker.add(() => {
     frameCount++;
+    const currentTime = Date.now();
+    stats.lastGameTick = currentTime - lastTickTime;
 
     // Process chunk generation queue (more chunks per frame when game starts)
     const chunksPerFrame = frameCount < 60 ? 5 : 2;
@@ -203,6 +213,9 @@ interface Stats {
 
     // Update player
     player.update(chunkManager.chunks, keys);
+
+    // Process game ticks for all active chunks
+    chunkManager.processGameTick(currentTime, player);
 
     // Update player's chunk and direction info in the chunk manager
     chunkManager.updatePlayerDirection(player.x, player.y, player.vx, player.vy);
