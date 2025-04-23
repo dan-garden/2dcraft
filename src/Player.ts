@@ -1,6 +1,7 @@
 import { Graphics } from 'pixi.js';
 import { Chunk } from './Chunk';
-import { TILE_SIZE, TileType, CHUNK_SIZE } from './constants';
+import { TILE_SIZE, CHUNK_SIZE, MAX_DIG_RADIUS } from './constants';
+import { Block, blockRegistry } from './blocks';
 
 export class Player {
   sprite: Graphics;
@@ -18,10 +19,13 @@ export class Player {
   maxJumpHeight = TILE_SIZE * 2;
   jumping = false;
 
-  // Player physics properties (moved from constants.ts)
-  gravity = 0.1;
-  speed = 1;
-  jumpStrength = 10;
+  // Player physics properties with more natural values
+  gravity = 0.25;         // Increased for faster falling
+  maxSpeed = 4;           // Maximum horizontal speed
+  acceleration = 0.2;     // How quickly player accelerates
+  deceleration = 0.3;     // How quickly player decelerates when not pressing keys
+  jumpStrength = 6;       // Jump initial velocity
+  airControl = 0.1;       // Reduced control in air (multiplier for acceleration)
 
   constructor() {
     // Create a simple player graphics using modern PixiJS v8 methods
@@ -43,10 +47,43 @@ export class Player {
     // Store previous position for collision resolution
     this.prevY = this.y;
 
-    // Handle horizontal movement
-    this.vx = 0;
-    if (keys['ArrowLeft'] || keys['a']) this.vx = -this.speed;
-    if (keys['ArrowRight'] || keys['d']) this.vx = this.speed;
+    // Get block below player for friction calculation
+    const blockBelowPlayer = this.getBlockBelow(chunks);
+    const friction = blockBelowPlayer ? blockBelowPlayer.friction : 1.0;
+
+    // Handle horizontal movement with acceleration and deceleration
+    const moveLeft = keys['ArrowLeft'] || keys['a'];
+    const moveRight = keys['ArrowRight'] || keys['d'];
+
+    // Determine acceleration based on ground vs air
+    const currentAccel = this.grounded ? this.acceleration : this.acceleration * this.airControl;
+
+    if (moveLeft) {
+      // Accelerate left
+      this.vx -= currentAccel;
+      // Cap at max speed
+      if (this.vx < -this.maxSpeed) {
+        this.vx = -this.maxSpeed;
+      }
+    } else if (moveRight) {
+      // Accelerate right
+      this.vx += currentAccel;
+      // Cap at max speed
+      if (this.vx > this.maxSpeed) {
+        this.vx = this.maxSpeed;
+      }
+    } else {
+      // Apply deceleration when no keys pressed - adjusted by friction
+      const currentDecel = this.deceleration * friction;
+
+      if (this.vx > 0) {
+        this.vx -= currentDecel;
+        if (this.vx < 0) this.vx = 0;
+      } else if (this.vx < 0) {
+        this.vx += currentDecel;
+        if (this.vx > 0) this.vx = 0;
+      }
+    }
 
     // Apply gravity
     if (!this.grounded) {
@@ -99,7 +136,9 @@ export class Player {
         const collisionsX = this.checkCollisions(chunks, true, false);
 
         if (collisionsX.left || collisionsX.right) {
+          // Bounce back slightly and stop momentum
           this.x -= stepX;
+          this.vx = 0;
           break;
         }
       }
@@ -128,10 +167,10 @@ export class Player {
 
     // Check if there's ground in front of the player
     const frontX = this.vx > 0 ? rightX : leftX;
-    const frontAirTile = this.getTileAt(frontX, feetY - TILE_SIZE / 2, chunks);
+    const frontBlock = this.getBlockAt(frontX, feetY - TILE_SIZE / 2, chunks);
 
     // Allow moving if there's no obstacle at player level
-    if (frontAirTile !== TileType.Air) {
+    if (frontBlock.isCollidable()) {
       return false; // There's a block in the way
     }
 
@@ -178,8 +217,8 @@ export class Player {
     }
 
     for (const point of checkPoints) {
-      const tile = this.getTileAt(point.x, point.y, chunks);
-      if (tile !== TileType.Air) {
+      const block = this.getBlockAt(point.x, point.y, chunks);
+      if (block.isCollidable()) {
         // Determine collision side
         if (checkVertical) {
           if (point.y >= feetY - 5) result.bottom = true;
@@ -196,29 +235,57 @@ export class Player {
     return result;
   }
 
-  getTileAt(x: number, y: number, chunks: Map<string, Chunk>): TileType {
+  getBlockAt(x: number, y: number, chunks: Map<string, Chunk>): Block {
     // Convert world coordinates to chunk coordinates
     const cx = Math.floor(x / (CHUNK_SIZE * TILE_SIZE));
     const cy = Math.floor(y / (CHUNK_SIZE * TILE_SIZE));
     const key = `${cx},${cy}`;
 
     if (!chunks.has(key)) {
-      return TileType.Air;
+      return blockRegistry.air;
     }
 
     const chunk = chunks.get(key)!;
 
     // Make sure the chunk is generated
     if (!chunk.isGenerated) {
-      return TileType.Air;
+      return blockRegistry.air;
     }
 
     // Convert world coordinates to tile coordinates within the chunk
     const tileX = Math.floor((x - cx * CHUNK_SIZE * TILE_SIZE) / TILE_SIZE);
     const tileY = Math.floor((y - cy * CHUNK_SIZE * TILE_SIZE) / TILE_SIZE);
 
-    // Use the safer getTile method from the Chunk class
-    return chunk.getTile(tileX, tileY);
+    // If coordinates are within the current chunk, use the chunk's getTile method
+    if (tileX >= 0 && tileX < CHUNK_SIZE && tileY >= 0 && tileY < CHUNK_SIZE) {
+      return chunk.getTile(tileX, tileY);
+    }
+
+    // Handle boundary cases by looking at adjacent chunks
+    let adjacentCx = cx;
+    let adjacentCy = cy;
+    let adjacentTileX = tileX;
+    let adjacentTileY = tileY;
+
+    // Adjust chunk and tile coordinates based on overflow
+    if (tileX >= CHUNK_SIZE) {
+      adjacentCx = cx + 1;
+      adjacentTileX = 0; // First tile of next chunk
+    }
+
+    if (tileY >= CHUNK_SIZE) {
+      adjacentCy = cy + 1;
+      adjacentTileY = 0; // First tile of chunk below
+    }
+
+    // Check the adjacent chunk
+    const adjacentKey = `${adjacentCx},${adjacentCy}`;
+    if (chunks.has(adjacentKey) && chunks.get(adjacentKey)!.isGenerated) {
+      return chunks.get(adjacentKey)!.getTile(adjacentTileX, adjacentTileY);
+    }
+
+    // Default to air if no valid tile was found
+    return blockRegistry.air;
   }
 
   checkIfStillGrounded(chunks: Map<string, Chunk>) {
@@ -228,13 +295,133 @@ export class Player {
     const middleX = this.x + this.width / 2;
 
     // Check if there's ground beneath the player at multiple points
-    const hasGroundLeft = this.getTileAt(leftX, feetY, chunks) !== TileType.Air;
-    const hasGroundRight = this.getTileAt(rightX, feetY, chunks) !== TileType.Air;
-    const hasGroundMiddle = this.getTileAt(middleX, feetY, chunks) !== TileType.Air;
+    const hasGroundLeft = this.getBlockAt(leftX, feetY, chunks).isCollidable();
+    const hasGroundRight = this.getBlockAt(rightX, feetY, chunks).isCollidable();
+    const hasGroundMiddle = this.getBlockAt(middleX, feetY, chunks).isCollidable();
 
     // If there's no ground under any of these points, player should start falling
     if (!hasGroundLeft && !hasGroundRight && !hasGroundMiddle) {
       this.grounded = false;
     }
+  }
+
+  // Method to dig/break blocks
+  digBlock(chunks: Map<string, Chunk>): boolean {
+    // Position for the block below the player's feet
+    const feetY = this.y + this.height;
+    const targetY = feetY + TILE_SIZE; // Block directly below feet
+    const middleX = this.x + this.width / 2;
+
+    // Get block coordinates
+    const cx = Math.floor(middleX / (CHUNK_SIZE * TILE_SIZE));
+    const cy = Math.floor(targetY / (CHUNK_SIZE * TILE_SIZE));
+    const key = `${cx},${cy}`;
+
+    // Calculate tile coordinates within the chunk
+    const tileX = Math.floor((middleX - cx * CHUNK_SIZE * TILE_SIZE) / TILE_SIZE);
+    const tileY = Math.floor((targetY - cy * CHUNK_SIZE * TILE_SIZE) / TILE_SIZE);
+
+    // Check if the chunk exists
+    if (!chunks.has(key)) {
+      return false;
+    }
+
+    const chunk = chunks.get(key)!;
+
+    // Make sure the chunk is generated
+    if (!chunk.isGenerated) {
+      return false;
+    }
+
+    // Get the block at the target position
+    const block = chunk.getTile(tileX, tileY);
+
+    // If it's not air (already dug) and is solid, replace it with air
+    if (block.id !== blockRegistry.air.id && block.isCollidable()) {
+      return chunk.setTile(tileX, tileY, blockRegistry.air.id);
+    }
+
+    return false;
+  }
+
+  // Method to dig blocks at a specific world position within a radius
+  digBlockAtPosition(worldX: number, worldY: number, chunks: Map<string, Chunk>): boolean {
+    // Get player's center position
+    const playerCenterX = this.x + this.width / 2;
+    const playerCenterY = this.y + this.height / 2;
+
+    // Calculate distance from player to target position
+    const dx = worldX - playerCenterX;
+    const dy = worldY - playerCenterY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Check if the target is within digging radius
+    if (distance > MAX_DIG_RADIUS) {
+      console.log(`Target too far: ${distance.toFixed(2)} > ${MAX_DIG_RADIUS}`);
+      return false;
+    }
+
+    // Convert world coordinates to chunk coordinates
+    const cx = Math.floor(worldX / (CHUNK_SIZE * TILE_SIZE));
+    const cy = Math.floor(worldY / (CHUNK_SIZE * TILE_SIZE));
+    const key = `${cx},${cy}`;
+
+    if (!chunks.has(key)) {
+      return false;
+    }
+
+    const chunk = chunks.get(key)!;
+
+    // Make sure the chunk is generated
+    if (!chunk.isGenerated) {
+      return false;
+    }
+
+    // Calculate tile coordinates within the chunk
+    const tileX = Math.floor((worldX - cx * CHUNK_SIZE * TILE_SIZE) / TILE_SIZE);
+    const tileY = Math.floor((worldY - cy * CHUNK_SIZE * TILE_SIZE) / TILE_SIZE);
+
+    // Get the block at the target position
+    const block = chunk.getTile(tileX, tileY);
+
+    // If it's not air (already dug) and is solid, replace it with air
+    if (block.id !== blockRegistry.air.id && block.isCollidable()) {
+      return chunk.setTile(tileX, tileY, blockRegistry.air.id);
+    }
+
+    return false;
+  }
+
+  // Helper method to get the block below the player
+  getBlockBelow(chunks: Map<string, Chunk>): Block | null {
+    const feetY = this.y + this.height + 1; // One pixel below feet
+    const middleX = this.x + this.width / 2;
+
+    // Convert world coordinates to chunk coordinates
+    const cx = Math.floor(middleX / (CHUNK_SIZE * TILE_SIZE));
+    const cy = Math.floor(feetY / (CHUNK_SIZE * TILE_SIZE));
+    const key = `${cx},${cy}`;
+
+    if (!chunks.has(key)) {
+      return null;
+    }
+
+    const chunk = chunks.get(key)!;
+
+    // Make sure the chunk is generated
+    if (!chunk.isGenerated) {
+      return null;
+    }
+
+    // Convert world coordinates to tile coordinates within the chunk
+    const tileX = Math.floor((middleX - cx * CHUNK_SIZE * TILE_SIZE) / TILE_SIZE);
+    const tileY = Math.floor((feetY - cy * CHUNK_SIZE * TILE_SIZE) / TILE_SIZE);
+
+    // Check if coordinates are valid
+    if (tileX < 0 || tileX >= CHUNK_SIZE || tileY < 0 || tileY >= CHUNK_SIZE) {
+      return null;
+    }
+
+    return chunk.getTile(tileX, tileY);
   }
 } 

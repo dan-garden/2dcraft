@@ -1,8 +1,9 @@
 import { Application, Graphics, Sprite, RenderTexture } from 'pixi.js';
-import { CHUNK_SIZE, TILE_SIZE, WORLD_HEIGHT, TileType, tileColors } from './constants';
+import { CHUNK_SIZE, TILE_SIZE, WORLD_HEIGHT } from './constants';
+import { Block, blockRegistry } from './blocks';
 
 export class Chunk {
-  tiles: TileType[][] = [];
+  tileIds: number[][] = [];
   sprite: Sprite | null = null;
   texture: RenderTexture | null = null;
   needsUpdate = true;
@@ -13,34 +14,49 @@ export class Chunk {
 
   generate() {
     // Initialize empty tile array
-    this.tiles = Array(CHUNK_SIZE).fill(null).map(() => Array(CHUNK_SIZE).fill(TileType.Air));
+    this.tileIds = Array(CHUNK_SIZE).fill(null).map(() => Array(CHUNK_SIZE).fill(blockRegistry.air.id));
 
     for (let y = 0; y < CHUNK_SIZE; y++) {
       for (let x = 0; x < CHUNK_SIZE; x++) {
         const worldX = this.cx * CHUNK_SIZE + x;
 
-        // Use multiple octaves of noise for more interesting terrain
-        const baseNoise = this.noise2D(worldX * 0.05, 0);
-        const detailNoise = this.noise2D(worldX * 0.1, 0) * 0.3;
+        // Use less intense noise for flatter terrain
+        const baseNoise = this.noise2D(worldX * 0.02, 0);
+        const detailNoise = this.noise2D(worldX * 0.05, 0) * 0.15;
 
-        // Fix for upside-down world - higher values mean higher ground position
-        const heightValue = (baseNoise + detailNoise) * 0.5 + 0.5; // Normalize to 0-1
-        const height = Math.floor(WORLD_HEIGHT * (1 - heightValue) * 0.5) + WORLD_HEIGHT / 4;
+        // Additional noise for ice patches
+        const iceNoise = this.noise2D(worldX * 0.1, 5) * 0.5 + 0.5;
+
+        // Reduce height variation for flatter terrain
+        const heightValue = (baseNoise + detailNoise) * 0.3 + 0.5; // Reduced multiplier for less height variation
+
+        // Move base terrain level higher for more flat land to traverse
+        const baseHeight = WORLD_HEIGHT * 0.6;
+        const height = Math.floor(baseHeight + heightValue * WORLD_HEIGHT * 0.1);
 
         // Convert to world y position
         const worldY = this.cy * CHUNK_SIZE + y;
 
+        let blockId: number;
         if (worldY < height) {
-          this.tiles[y][x] = TileType.Air;
+          blockId = blockRegistry.air.id;
         } else if (worldY === height) {
-          this.tiles[y][x] = TileType.Grass;
+          // Add ice patches randomly based on noise
+          if (iceNoise > 0.7) {
+            blockId = blockRegistry.ice.id;
+          } else {
+            blockId = blockRegistry.grass.id;
+          }
         } else if (worldY < height + 3) {
-          this.tiles[y][x] = TileType.Dirt;
+          blockId = blockRegistry.dirt.id;
         } else {
-          this.tiles[y][x] = TileType.Stone;
+          blockId = blockRegistry.stone.id;
         }
+
+        this.tileIds[y][x] = blockId;
       }
     }
+
     this.isGenerated = true;
     this.needsUpdate = true;
   }
@@ -62,27 +78,29 @@ export class Chunk {
       resolution: 1
     });
 
-    // Create a temporary graphics object to draw the chunk
+    // Create a graphics object to draw the chunk
     const tempGraphics = new Graphics();
 
-    // Draw all tiles using modern PixiJS v8 methods
+    // Draw each tile first
     for (let y = 0; y < CHUNK_SIZE; y++) {
       for (let x = 0; x < CHUNK_SIZE; x++) {
-        const tile = this.tiles[y][x];
-        if (tile === TileType.Air) continue;
+        const blockId = this.tileIds[y][x];
+        const block = blockRegistry.getBlockById(blockId);
+        if (block.id === blockRegistry.air.id) continue;
 
-        // Modern PixiJS v8 fill and rect methods
-        tempGraphics.fill({ color: tileColors[tile] });
+        tempGraphics.fill({ color: block.color });
         tempGraphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+        // Special handling for the bottom-right tile to ensure it renders properly
+        // Draw it with a slight overlap to address potential rendering issues at chunk boundaries
+        if (x === CHUNK_SIZE - 1 && y === CHUNK_SIZE - 1) {
+          tempGraphics.fill({ color: block.color });
+          tempGraphics.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE + 0.5, TILE_SIZE + 0.5);
+        }
       }
     }
 
-    // Add a border around the chunk for debugging
-    tempGraphics.fill({ color: 0x000000, alpha: 0 });
-    tempGraphics.stroke({ width: 1, color: 0x333333, alpha: 0.5 });
-    tempGraphics.rect(0, 0, CHUNK_SIZE * TILE_SIZE, CHUNK_SIZE * TILE_SIZE);
-
-    // Render the graphics to the texture using modern PixiJS v8 render options
+    // Render the graphics to the texture
     app.renderer.render({
       container: tempGraphics,
       target: this.texture
@@ -103,11 +121,27 @@ export class Chunk {
     this.needsUpdate = false;
   }
 
-  // Get tile at the specified position within this chunk
-  getTile(x: number, y: number): TileType {
+  // Get block at the specified position within this chunk
+  getTile(x: number, y: number): Block {
     if (x < 0 || x >= CHUNK_SIZE || y < 0 || y >= CHUNK_SIZE || !this.isGenerated) {
-      return TileType.Air;
+      return blockRegistry.air;
     }
-    return this.tiles[y][x];
+    const blockId = this.tileIds[y][x];
+    return blockRegistry.getBlockById(blockId);
+  }
+
+  // Set a tile at the specified position
+  setTile(x: number, y: number, blockId: number): boolean {
+    if (x < 0 || x >= CHUNK_SIZE || y < 0 || y >= CHUNK_SIZE || !this.isGenerated) {
+      return false;
+    }
+
+    // Set the new block ID
+    this.tileIds[y][x] = blockId;
+
+    // Mark chunk for update so it will be redrawn
+    this.needsUpdate = true;
+
+    return true;
   }
 } 

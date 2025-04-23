@@ -121,6 +121,70 @@ interface Stats {
   window.addEventListener('keydown', (e) => { keys[e.key] = true; });
   window.addEventListener('keyup', (e) => { keys[e.key] = false; });
 
+  // Track if player is actively digging (for dig radius display)
+  let isDigging = false;
+
+  // Add mouse down/up handling for digging
+  window.addEventListener('mousedown', (e) => {
+    if (e.button === 0) { // Left mouse button
+      isDigging = true;
+      // Get cursor position from debug renderer and try to dig
+      tryDigAtCursor();
+    }
+  });
+
+  window.addEventListener('mouseup', (e) => {
+    if (e.button === 0) { // Left mouse button
+      isDigging = false;
+    }
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    // If player is holding down the mouse button, try to dig continuously
+    if (isDigging) {
+      tryDigAtCursor();
+    }
+  });
+
+  // Helper function to try digging at cursor position
+  function tryDigAtCursor() {
+    const hoverTile = debugRenderer.hoverTile;
+
+    // Try to dig at the cursor position if tile exists
+    if (hoverTile.block !== null) {
+      const didDig = player.digBlockAtPosition(
+        hoverTile.x * TILE_SIZE,
+        hoverTile.y * TILE_SIZE,
+        chunkManager.chunks
+      );
+
+      // If the dig was successful, update the chunk texture
+      if (didDig) {
+        // Visual feedback for successful digging
+        console.log(`Dug block at (${hoverTile.x}, ${hoverTile.y})`);
+
+        // Show visual dig effect
+        debugRenderer.showDigEffect(hoverTile.x, hoverTile.y);
+
+        // Get chunk coordinates from the tile position
+        const chunkX = Math.floor(hoverTile.x / CHUNK_SIZE);
+        const chunkY = Math.floor(hoverTile.y / CHUNK_SIZE);
+        const key = `${chunkX},${chunkY}`;
+
+        // Update chunk texture if it exists and has been updated
+        if (chunkManager.chunks.has(key) && chunkManager.chunks.get(key)!.needsUpdate) {
+          chunkManager.chunks.get(key)!.createTexture(app);
+        }
+      }
+    }
+  }
+
+  // Add empty click handler to replace the one we're removing
+  window.addEventListener('click', (e) => { });
+
+  // Now we can safely remove any older click handlers
+  window.removeEventListener('click', tryDigAtCursor);
+
   // Game loop
   app.ticker.add(() => {
     frameCount++;
@@ -142,6 +206,9 @@ interface Stats {
 
     // Update player's chunk and direction info in the chunk manager
     chunkManager.updatePlayerDirection(player.x, player.y, player.vx, player.vy);
+
+    // Update debug renderer with isDigging state
+    debugRenderer.isDigging = isDigging;
 
     // Update camera to follow player
     camera.follow(player.x + player.width / 2, player.y + player.height / 2);
