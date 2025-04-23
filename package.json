@@ -1,0 +1,19 @@
+{
+  "name": "craft2d",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.2",
+    "vite": "^6.3.1"
+  },
+  "dependencies": {
+    "pixi.js": "^8.9.1",
+    "simplex-noise": "^4.0.3"
+  }
+}
