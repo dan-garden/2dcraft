@@ -8,4 +8,5 @@ export class Light extends Block {
   readonly isTransparent = true;
   readonly texturePath = './assets/textures/glowstone.png';
   readonly tinted = false;
+  readonly lightEmission = 15; // Maximum light level
 } 

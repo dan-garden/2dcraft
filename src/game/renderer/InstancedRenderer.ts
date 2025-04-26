@@ -1,6 +1,7 @@
 import { World } from '../world/World';
 import { BlockRegistry } from '../blocks/BlockRegistry';
 import * as THREE from 'three';
+import { CameraController } from '../controllers/CameraController';
 
 export class InstancedRenderer {
   private scene: THREE.Scene;
@@ -11,6 +12,7 @@ export class InstancedRenderer {
   // Lighting elements
   private ambientLight: THREE.AmbientLight;
   private directionalLight: THREE.DirectionalLight;
+  private pointLights: Map<string, THREE.PointLight> = new Map();
 
   // Depth settings
   private readonly blockDepth = 0.5; // How deep blocks appear in the z-direction
@@ -20,9 +22,11 @@ export class InstancedRenderer {
     this.scene = scene;
     this.meshes = new Map<number, THREE.InstancedMesh>();
 
-    // Setup lighting for 2.5D effect
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 1);
-    this.directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    // Setup 2.5D lighting with brighter ambient (for surface illumination)
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Increased from 0.6 to 0.8
+
+    // Directional light for sun-like lighting coming in at an angle
+    this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.9); // Increased from 0.7 to 0.9
     this.directionalLight.position.set(5, 10, 7);
     this.directionalLight.castShadow = true;
 
@@ -71,7 +75,9 @@ export class InstancedRenderer {
         matParams.color = new THREE.Color(block.color);
       }
 
+      // Create a standard material
       const material = new THREE.MeshStandardMaterial(matParams);
+
       const mesh = new THREE.InstancedMesh(baseGeom, material, maxInstancesPerBlock);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.frustumCulled = false;
@@ -94,7 +100,9 @@ export class InstancedRenderer {
       const perspCamera = camera as THREE.PerspectiveCamera;
       const vFOV = THREE.MathUtils.degToRad(perspCamera.fov);
       const hFOV = 2 * Math.atan(Math.tan(vFOV / 2) * perspCamera.aspect);
-      const cameraDistance = 30;
+
+      // Get camera distance from position.z assuming the camera is looking at z=0
+      const cameraDistance = Math.abs(perspCamera.position.z);
 
       return {
         width: 2 * Math.tan(hFOV / 2) * cameraDistance,
@@ -116,7 +124,60 @@ export class InstancedRenderer {
     this.dummy.rotation.set(0, 0, 0);
     this.dummy.updateMatrix();
 
-    mesh.setMatrixAt(mesh.count++, this.dummy.matrix);
+    // Store the current instance index
+    const instanceIdx = mesh.count;
+
+    // Set the matrix for this instance
+    mesh.setMatrixAt(instanceIdx, this.dummy.matrix);
+
+    // Check if this is a light-emitting block
+    const registry = BlockRegistry.getInstance();
+    const block = registry.getById(blockId);
+
+    // Add point light if this block emits light
+    if (block.lightEmission > 0) {
+      const blockKey = `${x},${y}`;
+
+      // Only create light if it doesn't already exist
+      if (!this.pointLights.has(blockKey)) {
+        const intensity = block.lightEmission / 15 * 1.2; // Increased from 0.7 to 1.2
+        const pointLight = new THREE.PointLight(
+          new THREE.Color(block.color).getHex(),
+          intensity,
+          block.lightEmission * 2.0, // Increased range from 1.5 to 2.0
+          1.0 // Reduced decay from 1.2 to 1.0 for wider light spread
+        );
+
+        pointLight.position.set(x + 0.5, y + 0.5, zPos + 0.1);
+        this.scene.add(pointLight);
+        this.pointLights.set(blockKey, pointLight);
+      }
+    }
+
+    // Increment the instance count
+    mesh.count++;
+  }
+
+  private cleanupRemovedLightBlocks(world: World, startX: number, endX: number, startY: number, endY: number): void {
+    // Clean up any light sources that are no longer present
+    this.pointLights.forEach((light, blockKey) => {
+      const [x, y] = blockKey.split(',').map(Number);
+
+      // If outside view or not a light block anymore
+      if (x < startX || x > endX || y < startY || y > endY) {
+        // Outside view, keep light for now
+        return;
+      }
+
+      // Check if block still exists and emits light
+      const block = world.getBlockAt(x, y);
+      if (block.lightEmission <= 0) {
+        // Remove the light
+        this.scene.remove(light);
+        light.dispose();
+        this.pointLights.delete(blockKey);
+      }
+    });
   }
 
   public render(world: World, cameraPosition: THREE.Vector2, camera: THREE.Camera) {
@@ -157,6 +218,9 @@ export class InstancedRenderer {
         this.renderBlock(x, y, block.id);
       }
     }
+
+    // Clean up any removed light sources
+    this.cleanupRemovedLightBlocks(world, startX, endX, startY, endY);
 
     // Update instance matrices for all meshes with instances
     this.meshes.forEach(mesh => {

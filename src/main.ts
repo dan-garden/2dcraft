@@ -15,35 +15,20 @@ const maxBlocksY = Math.ceil(window.innerHeight / 16) + WORLD_BUFFER * 2;
 const maxTilesPerBlock = maxBlocksX * maxBlocksY * 4; // Extra buffer for safety
 
 // Initialize game world
-const world = new World(Math.random().toString()); // Changed seed for testing
+// const seed = Math.random().toString();
+const seed = "1234567890";
+const world = new World(seed);
 
 // Three.js setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); // Sky blue background color
 
-// Define camera settings
-const initialViewWidth = Math.ceil(window.innerWidth / 16);
-const initialViewHeight = Math.ceil(window.innerHeight / 16);
+// Create perspective camera
 const aspect = window.innerWidth / window.innerHeight;
-
-// Create cameras - both orthographic and perspective
-const orthographicCamera = new THREE.OrthographicCamera(
-  -initialViewWidth / 2,
-  initialViewWidth / 2,
-  initialViewHeight / 2,
-  -initialViewHeight / 2,
-  -1000,
-  1000
-);
-
-const perspectiveCamera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
-
-// Choose which camera to start with
-const use2DMode = false; // Always use 2.5D mode
-const activeCamera = perspectiveCamera; // Always use perspective camera
+const camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
 
 // Create fog for distance fading in perspective mode
-scene.fog = new THREE.Fog(0x87CEEB, 30, 100);
+scene.fog = new THREE.Fog(0x9FDFFF, 40, 120); // Brighter blue fog that starts further away
 
 // Add subtle ambient occlusion for depth perception
 const aoTex = new THREE.TextureLoader().load('./assets/textures/ao_map.png');
@@ -61,13 +46,13 @@ renderer.setPixelRatio(1); // Force 1:1 pixel ratio for sharpness
 renderer.sortObjects = true; // Enable sorting by renderOrder
 renderer.outputColorSpace = THREE.SRGBColorSpace; // More balanced color space
 renderer.toneMapping = THREE.ACESFilmicToneMapping; // Subtle tone mapping for balance
-renderer.toneMappingExposure = 0.9; // Slightly reduce exposure for balanced contrast
+renderer.toneMappingExposure = 1.2; // Increased from 0.9 to 1.2 for overall brightness
 renderer.shadowMap.enabled = true; // Enable shadows
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Use soft shadows
 document.body.appendChild(renderer.domElement);
 
-// Initialize controllers and utilities
-const cameraController = new CameraController(activeCamera, 1, true); // Always use perspective mode
+// Initialize controllers and utilities - true = use perspective mode
+const cameraController = new CameraController(camera, 1, true);
 const inputController = new InputController();
 const debugInfo = new DebugInfo();
 
@@ -81,7 +66,7 @@ inputController.initialize(renderer.domElement);
 const instRenderer = new InstancedRenderer(scene, maxTilesPerBlock);
 
 // Create player at position (0, 30) - a bit above ground level to give time to fall
-const player = new Player(scene, 0, 30);
+const player = new Player(scene, 0, 10);
 
 // Add CSS to maintain pixel perfection
 const style = document.createElement('style');
@@ -113,7 +98,14 @@ debugInfo.onDebugToggle((enabled) => {
 
 // Register player as a handler for block interactions
 inputController.onBlockInteraction((event) => {
+  // Get the current block at this position
+  const oldBlock = world.getBlockAt(event.blockX, event.blockY);
+
+  // Handle the interaction through the player
   player.handleBlockInteraction(event.type, event.blockX, event.blockY, world);
+
+  // Get the new block after the interaction
+  const newBlock = world.getBlockAt(event.blockX, event.blockY);
 });
 
 // Register fly mode callbacks
@@ -149,6 +141,10 @@ function animate() {
   // Update world chunks based on player position
   world.update(playerPos.x, playerPos.y);
 
+  // Get current chunks
+  const chunks = world.getChunks();
+  const chunkCount = chunks.length;
+
   // Get block at mouse position (from hover block)
   const hoverBlock = inputController.getHoverBlock();
   const blockX = hoverBlock ? hoverBlock.x : Math.floor(playerPos.x);
@@ -162,8 +158,6 @@ function animate() {
 
   // Get chunk information
   const { chunkX, chunkY } = worldToChunkCoords(blockX, blockY);
-  const chunks = world.getChunks();
-  const chunkCount = chunks.length;
 
   // Add chunk information to debugging
   document.title = `Game World - Chunks: ${chunkCount} - Biome: ${biomeInfo}`;
@@ -177,7 +171,7 @@ function animate() {
     blockX,
     blockY,
     playerPos,
-    activeCamera,
+    camera,
     cameraController.getViewSize(),
     player.getVelocity(),
     player.isGrounded(),
@@ -193,10 +187,10 @@ function animate() {
   }
 
   // Render with camera position and camera
-  instRenderer.render(world, cameraController.getPosition(), activeCamera);
+  instRenderer.render(world, cameraController.getPosition(), camera);
 
   // Final render of the scene
-  renderer.render(scene, activeCamera);
+  renderer.render(scene, camera);
 }
 
 animate();
@@ -205,8 +199,6 @@ animate();
 window.addEventListener('resize', () => {
   cameraController.handleResize();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  if (activeCamera instanceof THREE.PerspectiveCamera) {
-    activeCamera.aspect = window.innerWidth / window.innerHeight;
-    activeCamera.updateProjectionMatrix();
-  }
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
 });

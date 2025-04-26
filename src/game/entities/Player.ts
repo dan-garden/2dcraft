@@ -71,6 +71,9 @@ export class Player {
     this.velocity = new THREE.Vector2(0, 0);
     this.inventory = new Inventory();
 
+    // Initialize inventory with blocks
+    this.inventory.initializeWithBlocks(100);
+
     // Create player mesh with texture
     const geometry = new THREE.PlaneGeometry(this.width, this.height);
 

@@ -43,17 +43,17 @@ export class Inventory {
       this.createInventoryUI();
       return;
     }
-    
+
     // Clear existing slots
     this.uiContainer.innerHTML = '';
-    
+
     const selectedItem = this.getSelectedItem();
     const registry = BlockRegistry.getInstance();
-    
+
     // Create slots for each inventory item
     this.items.forEach((item: InventoryItem, index: number) => {
       if (!this.uiContainer) return;
-      
+
       const slot = document.createElement('div');
       slot.style.cssText = `
         width: 40px;
@@ -71,14 +71,14 @@ export class Inventory {
         border-radius: 4px;
         overflow: hidden;
       `;
-      
+
       // Get block from registry
       const block = registry.getById(item.blockId);
-      
+
       // Create texture image if available
       if (block.texturePath) {
         const texture = document.createElement('div');
-        
+
         if (block.tinted) {
           // For tinted blocks, we use a simple approach with a colored overlay
           texture.style.cssText = `
@@ -90,7 +90,7 @@ export class Inventory {
             background-position: center;
             position: relative;
           `;
-          
+
           // Add color overlay
           const overlay = document.createElement('div');
           overlay.style.cssText = `
@@ -103,7 +103,7 @@ export class Inventory {
             mix-blend-mode: multiply;
             opacity: 1;
           `;
-          
+
           texture.appendChild(overlay);
         } else {
           // For non-tinted blocks, just show the texture
@@ -116,7 +116,7 @@ export class Inventory {
             background-position: center;
           `;
         }
-        
+
         slot.appendChild(texture);
       } else {
         // Fallback to color block if no texture
@@ -128,7 +128,7 @@ export class Inventory {
         `;
         slot.appendChild(colorBlock);
       }
-      
+
       // Add count
       const count = document.createElement('div');
       count.textContent = item.count.toString();
@@ -141,11 +141,11 @@ export class Inventory {
         text-shadow: 1px 1px 1px black;
         z-index: 1;
       `;
-      
+
       slot.appendChild(count);
       this.uiContainer.appendChild(slot);
     });
-    
+
     // Add empty slot indicator if inventory is empty
     if (this.items.length === 0 && this.uiContainer) {
       const emptySlot = document.createElement('div');
@@ -167,11 +167,31 @@ export class Inventory {
     }
   }
 
+  // Initialize the inventory with blocks
+  public initializeWithBlocks(quantity: number = 100): void {
+    // Get all blocks from registry
+    const registry = BlockRegistry.getInstance();
+    const blocks = registry.all();
+
+    // Add each block to inventory (except air which is ID 0)
+    blocks.forEach(block => {
+      if (block.id === 0) return; // Skip air blocks
+      this.items.push({ blockId: block.id, count: quantity });
+    });
+
+    // Update the UI
+    this.updateUI();
+
+    if (this.debugMode) {
+      console.log(`Initialized inventory with ${quantity} of each block type`);
+    }
+  }
+
   // Add item to inventory
   public addItem(blockId: number): void {
     // Find the item in inventory
     const existingItem = this.items.find(item => item.blockId === blockId);
-    
+
     if (existingItem) {
       // Increment count if already exists
       existingItem.count++;
@@ -179,38 +199,38 @@ export class Inventory {
       // Add new item if not in inventory
       this.items.push({ blockId, count: 1 });
     }
-    
+
     this.updateUI();
-    
+
     if (this.debugMode) {
       console.log(`Added block ID ${blockId} to inventory. Inventory:`, this.items);
     }
   }
-  
+
   // Remove item from inventory
   public removeItem(blockId: number): void {
     // Find the item index
     const itemIndex = this.items.findIndex(item => item.blockId === blockId);
-    
+
     if (itemIndex === -1) return;
-    
+
     const item = this.items[itemIndex];
-    
+
     // Decrement count
     item.count--;
-    
+
     // Remove from inventory if count reaches 0
     if (item.count <= 0) {
       this.items.splice(itemIndex, 1);
-      
+
       // Adjust selected index if needed
       if (this.selectedIdx >= this.items.length) {
         this.selectedIdx = Math.max(0, this.items.length - 1);
       }
     }
-    
+
     this.updateUI();
-    
+
     if (this.debugMode) {
       console.log(`Removed block ID ${blockId} from inventory. Remaining inventory:`, this.items);
     }
@@ -220,7 +240,7 @@ export class Inventory {
   public getItems(): InventoryItem[] {
     return [...this.items];
   }
-  
+
   // Get the currently selected item
   public getSelectedItem(): InventoryItem | null {
     if (this.items.length === 0) return null;
@@ -231,28 +251,28 @@ export class Inventory {
   public selectHotbarSlot(index: number): void {
     // Validate index
     if (index < 0) return;
-    
+
     // Set selected block index (but don't exceed inventory size)
     this.selectedIdx = Math.min(index, this.items.length - 1);
-    
+
     if (this.debugMode) {
       console.log(`Selected hotbar slot ${index}, inventory index: ${this.selectedIdx}`);
     }
-    
+
     this.updateUI();
   }
-  
+
   // Handle hotbar scroll
   public scrollHotbar(direction: number): void {
     if (this.items.length === 0) return;
-    
+
     // Calculate new index with wrapping
     this.selectedIdx = (this.selectedIdx + direction + this.items.length) % this.items.length;
-    
+
     if (this.debugMode) {
       console.log(`Scrolled hotbar to index: ${this.selectedIdx}`);
     }
-    
+
     this.updateUI();
   }
 
