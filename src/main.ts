@@ -1,252 +1,197 @@
-import './style.css'
-import { Application, Container } from 'pixi.js';
-import { createNoise2D } from 'simplex-noise';
-import { Player } from './Player';
-import { Camera } from './Camera';
-import { ChunkManager } from './ChunkManager';
-import { WORLD_HEIGHT, TILE_SIZE, CHUNK_SIZE } from './constants';
-import { DebugRenderer } from './DebugRenderer';
+import * as THREE from 'three';
+import { World } from './game/world/World';
+import { InstancedRenderer } from './game/renderer/InstancedRenderer';
+import { Chunk } from './game/world/Chunk';
+import { CameraController } from './game/controllers/CameraController';
+import { InputController } from './game/controllers/InputController';
+import { DebugInfo } from './game/utils/DebugInfo';
+import { Player } from './game/entities/Player';
+import { LightingSystem } from './game/renderer/LightingSystem';
 
-// Debug information object
-interface Stats {
-  fps: number;
-  chunkCount: number;
-  visibleChunks: number;
-  playerPos: { x: number, y: number };
-  cameraPos: { x: number, y: number };
-  queuedChunks: number;
-  lastGameTick: number;
+// Initial buffer distance for world generation
+const WORLD_BUFFER = 5;
+// Calculate maximum number of blocks that could be visible
+const maxBlocksX = Math.ceil(window.innerWidth / 16) + WORLD_BUFFER * 2;
+const maxBlocksY = Math.ceil(window.innerHeight / 16) + WORLD_BUFFER * 2;
+const maxTilesPerBlock = maxBlocksX * maxBlocksY * 4; // Extra buffer for safety
+
+// Initialize game world
+const world = new World(Math.random().toString()); // Changed seed for testing
+
+// Three.js setup
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB); // Sky blue background color
+const initialViewWidth = Math.ceil(window.innerWidth / 16);
+const initialViewHeight = Math.ceil(window.innerHeight / 16);
+const camera = new THREE.OrthographicCamera(
+  -initialViewWidth / 2, 
+  initialViewWidth / 2, 
+  initialViewHeight / 2, 
+  -initialViewHeight / 2, 
+  -1000, 
+  1000
+);
+camera.position.z = 1;
+
+// Set renderer with proper pixel ratio
+const renderer = new THREE.WebGLRenderer({ 
+  antialias: false,
+  alpha: true,
+  preserveDrawingBuffer: true
+});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(1); // Force 1:1 pixel ratio for sharpness
+renderer.sortObjects = true; // Enable sorting by renderOrder
+renderer.outputColorSpace = THREE.SRGBColorSpace; // More balanced color space
+renderer.toneMapping = THREE.ACESFilmicToneMapping; // Subtle tone mapping for balance
+renderer.toneMappingExposure = 0.9; // Slightly reduce exposure for balanced contrast
+document.body.appendChild(renderer.domElement);
+
+// Initialize controllers and utilities
+const cameraController = new CameraController(camera);
+const inputController = new InputController();
+const debugInfo = new DebugInfo();
+
+// Initialize the lighting system
+const lightingSystem = new LightingSystem(scene);
+
+// Set scene reference for debug info to render chunk borders
+debugInfo.setScene(scene);
+
+// Initialize input controller with renderer element
+inputController.initialize(renderer.domElement);
+
+// Block renderer (rendered in front of background)
+const instRenderer = new InstancedRenderer(scene, maxTilesPerBlock);
+
+// Create player at position (0, 30) - a bit above ground level to give time to fall
+const player = new Player(scene, 0, 30);
+
+// Add CSS to maintain pixel perfection
+const style = document.createElement('style');
+style.textContent = `
+  canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+`;
+document.head.appendChild(style);
+
+// Helper to convert world coordinates to chunk coordinates
+function worldToChunkCoords(x: number, y: number) {
+  const chunkX = Math.floor(x / Chunk.SIZE);
+  const chunkY = Math.floor(y / Chunk.SIZE);
+  const localX = ((x % Chunk.SIZE) + Chunk.SIZE) % Chunk.SIZE;
+  const localY = ((y % Chunk.SIZE) + Chunk.SIZE) % Chunk.SIZE;
+  return { chunkX, chunkY, localX, localY };
 }
 
-// Asynchronous IIFE
-(async () => {
-  console.log("Starting 2DCraft...");
+// After initializing controllers and player, connect them
+inputController.setReferences(cameraController, world, player, debugInfo);
 
-  // Create a PixiJS application
-  const app = new Application();
+// Register debug callbacks for world, player, and input controller
+debugInfo.onDebugToggle((enabled) => {
+  world.handleDebugToggle(enabled);
+  player.handleDebugToggle(enabled);
+});
 
-  // Initialize the application
-  await app.init({
-    background: 0x87ceeb, // Sky blue background
-    resizeTo: window,
-    antialias: true,
-    powerPreference: 'high-performance',
-  });
+// Register player as a handler for block interactions
+inputController.onBlockInteraction((event) => {
+  player.handleBlockInteraction(event.type, event.blockX, event.blockY, world);
+});
 
-  // Add the application's canvas to the DOM body
-  document.body.appendChild(app.canvas);
+// Register fly mode callbacks
+inputController.onFlyModeToggle((event) => {
+  player.handleFlyModeToggle(event.enabled);
+});
 
-  // Setup noise generator with a fixed seed for consistency
-  const noise2D = createNoise2D();
+// Register hotbar selection callbacks
+inputController.onHotbarSelection((index) => {
+  player.handleHotbarSelection(index);
+});
 
-  // Initialize game systems
-  const chunkManager = new ChunkManager(app, noise2D);
-  const camera = new Camera(app);
-  const player = new Player();
+// Register hotbar scroll callbacks
+inputController.onHotbarScroll((direction) => {
+  player.handleHotbarScroll(direction);
+});
 
-  // Configure game tick interval (milliseconds)
-  chunkManager.setTickInterval(1000); // 1 second between ticks
+function animate() {
+  requestAnimationFrame(animate);
 
-  // Create player container - this should be added AFTER the chunk container
-  // so the player appears on top of the terrain
-  const playerContainer = new Container();
-  app.stage.addChild(playerContainer);
+  // Update input controller first
+  inputController.update();
 
-  // Add player to the scene
-  playerContainer.addChild(player.sprite);
+  // Update player physics and controls
+  player.update(world, inputController.getKeys());
+  
+  // Get player position for camera to follow
+  const playerPos = player.getPosition();
+  
+  // Update camera to follow player
+  cameraController.setPosition(playerPos.x, playerPos.y);
 
-  // Initialize player position - start above ground
-  const startX = Math.floor(app.screen.width / 2);
-  const startY = Math.floor(WORLD_HEIGHT * TILE_SIZE / 3);
+  // Update world chunks based on player position
+  world.update(playerPos.x, playerPos.y);
+  
+  // Get block at mouse position (from hover block)
+  const hoverBlock = inputController.getHoverBlock();
+  const blockX = hoverBlock ? hoverBlock.x : Math.floor(playerPos.x);
+  const blockY = hoverBlock ? hoverBlock.y : Math.floor(playerPos.y);
+  const block = world.getBlockAt(blockX, blockY);
+  
+  // Get biome information at mouse position
+  const biome = world.getBiomeGenerator().getBiomeAt(blockX, blockY);
+  const biomeInfo = biome ? biome.name : 'None';
+  const heightAtPos = world.getWorldGenerator().getHeightAt(blockX);
+  
+  // Get chunk information
+  const { chunkX, chunkY } = worldToChunkCoords(blockX, blockY);
+  const chunks = world.getChunks();
+  const chunkCount = chunks.length;
+  
+  // Add chunk information to debugging
+  document.title = `Game World - Chunks: ${chunkCount} - Biome: ${biomeInfo}`;
+  
+  // Get selected block from inventory
+  const selectedBlock = player.getSelectedBlock();
+  
+  // Update debug info with camera, view, and biome information
+  debugInfo.update(
+    block.name, 
+    blockX, 
+    blockY,
+    playerPos,
+    camera,
+    cameraController.getViewSize(),
+    player.getVelocity(),
+    player.isGrounded(),
+    `${biomeInfo} (Chunk: ${chunkX},${chunkY})`,
+    heightAtPos,
+    player.isFlyModeEnabled(),
+    selectedBlock,
+    lightingSystem.getLightCount()
+  );
 
-  console.log(`Setting player at position: (${startX}, ${startY})`);
-  player.x = startX;
-  player.y = startY;
-  player.sprite.position.set(player.x, player.y);
-
-  // Initialize debug renderer
-  const debugRenderer = new DebugRenderer(app);
-
-  // Force load initial chunks around the player
-  const playerChunkX = Math.floor(player.x / (CHUNK_SIZE * TILE_SIZE));
-  const playerChunkY = Math.floor(player.y / (CHUNK_SIZE * TILE_SIZE));
-  console.log(`Player starting in chunk: (${playerChunkX}, ${playerChunkY})`);
-
-  // Generate a wider area initially to ensure player doesn't fall through
-  chunkManager.forceLoadChunksAroundPosition(player.x, player.y);
-
-  // Initial camera position
-  camera.x = player.x - app.screen.width / 2;
-  camera.y = player.y - app.screen.height / 2;
-
-  // Update the container position based on the camera
-  chunkManager.updateChunkPositions(camera.x, camera.y);
-
-  // Game state
-  let frameCount = 0;
-  let lastPlayerX = player.x;
-  let lastPlayerY = player.y;
-  let lastTickTime = Date.now();
-
-  // Update player position relative to camera
-  function updatePlayerPosition() {
-    // Player sprite is in screen space
-    player.sprite.position.set(player.x - camera.x, player.y - camera.y);
+  // Update chunk borders if enabled
+  if (debugInfo.isChunkBordersVisible()) {
+    debugInfo.updateChunkBorders(chunks);
   }
 
-  // Debug info
-  const stats: Stats = {
-    fps: 0,
-    chunkCount: 0,
-    visibleChunks: 0,
-    playerPos: { x: 0, y: 0 },
-    cameraPos: { x: 0, y: 0 },
-    queuedChunks: 0,
-    lastGameTick: 0
-  };
+  // Render with camera position and camera
+  instRenderer.render(world, cameraController.getPosition(), camera);
+  
+  // Update lighting system
+  lightingSystem.update(world, cameraController.getPosition(), camera as THREE.OrthographicCamera);
+  
+  // Final render of the scene
+  renderer.render(scene, camera);
+}
 
-  function updateStats() {
-    stats.chunkCount = chunkManager.chunks.size;
-    stats.visibleChunks = chunkManager.visibleChunks.size;
-    stats.playerPos = { x: Math.floor(player.x / TILE_SIZE), y: Math.floor(player.y / TILE_SIZE) };
-    stats.cameraPos = { x: Math.floor(camera.x / TILE_SIZE), y: Math.floor(camera.y / TILE_SIZE) };
-    stats.queuedChunks = chunkManager.chunksToGenerate.length;
+animate();
 
-    // Update FPS counter every second
-    if (frameCount % 60 === 0) {
-      stats.fps = Math.round(app.ticker.FPS);
-
-      // Log stats
-      console.log('FPS:', stats.fps, 'Chunks:', stats.chunkCount, 'Visible:', stats.visibleChunks);
-      console.log(`Player at (${player.x}, ${player.y}), grounded: ${player.grounded}`);
-      console.log(`Last game tick: ${stats.lastGameTick}ms ago`);
-    }
-  }
-
-  // Handle keyboard controls
-  const keys: Record<string, boolean> = {};
-  window.addEventListener('keydown', (e) => { keys[e.key] = true; });
-  window.addEventListener('keyup', (e) => { keys[e.key] = false; });
-
-  // Track if player is actively digging (for dig radius display)
-  let isDigging = false;
-
-  // Add mouse down/up handling for digging
-  window.addEventListener('mousedown', (e) => {
-    if (e.button === 0) { // Left mouse button
-      isDigging = true;
-      // Get cursor position from debug renderer and try to dig
-      tryDigAtCursor();
-    }
-  });
-
-  window.addEventListener('mouseup', (e) => {
-    if (e.button === 0) { // Left mouse button
-      isDigging = false;
-    }
-  });
-
-  window.addEventListener('mousemove', (e) => {
-    // If player is holding down the mouse button, try to dig continuously
-    if (isDigging) {
-      tryDigAtCursor();
-    }
-  });
-
-  // Helper function to try digging at cursor position
-  function tryDigAtCursor() {
-    const hoverTile = debugRenderer.hoverTile;
-
-    // Try to dig at the cursor position if tile exists
-    if (hoverTile.block !== null) {
-      const didDig = player.digBlockAtPosition(
-        hoverTile.x * TILE_SIZE,
-        hoverTile.y * TILE_SIZE,
-        chunkManager.chunks,
-        keys
-      );
-
-      // If the dig was successful, update the chunk texture
-      if (didDig) {
-        // Visual feedback for successful digging
-        console.log(`Dug block at (${hoverTile.x}, ${hoverTile.y})`);
-
-        // Show visual dig effect
-        debugRenderer.showDigEffect(hoverTile.x, hoverTile.y);
-
-        // Get chunk coordinates from the tile position
-        const chunkX = Math.floor(hoverTile.x / CHUNK_SIZE);
-        const chunkY = Math.floor(hoverTile.y / CHUNK_SIZE);
-        const key = `${chunkX},${chunkY}`;
-
-        // Update chunk texture if it exists and has been updated
-        if (chunkManager.chunks.has(key) && chunkManager.chunks.get(key)!.needsUpdate) {
-          chunkManager.chunks.get(key)!.createTexture(app);
-        }
-      }
-    }
-  }
-
-  // Add empty click handler to replace the one we're removing
-  window.addEventListener('click', (e) => { });
-
-  // Now we can safely remove any older click handlers
-  window.removeEventListener('click', tryDigAtCursor);
-
-  // Game loop
-  app.ticker.add(() => {
-    frameCount++;
-    const currentTime = Date.now();
-    stats.lastGameTick = currentTime - lastTickTime;
-
-    // Process chunk generation queue (more chunks per frame when game starts)
-    const chunksPerFrame = frameCount < 60 ? 5 : 2;
-    chunkManager.processChunkQueue(chunksPerFrame);
-
-    // Calculate player velocity
-    const playerVx = player.x - lastPlayerX;
-    const playerVy = player.y - lastPlayerY;
-
-    // Update last position
-    lastPlayerX = player.x;
-    lastPlayerY = player.y;
-
-    // Update player
-    player.update(chunkManager.chunks, keys);
-
-    // Process game ticks for all active chunks
-    chunkManager.processGameTick(currentTime, player);
-
-    // Update player's chunk and direction info in the chunk manager
-    chunkManager.updatePlayerDirection(player.x, player.y, player.vx, player.vy);
-
-    // Update debug renderer with isDigging state
-    debugRenderer.isDigging = isDigging;
-
-    // Update camera to follow player
-    camera.follow(player.x + player.width / 2, player.y + player.height / 2);
-
-    // Update visible chunks based on camera position
-    chunkManager.updateVisibleChunks(camera.x, camera.y);
-
-    // Update chunk positions based on camera
-    chunkManager.updateChunkPositions(camera.x, camera.y);
-
-    // Update player position relative to camera (screen position)
-    updatePlayerPosition();
-
-    // Update stats
-    updateStats();
-
-    // Update debug visuals
-    debugRenderer.update(player, chunkManager, camera, stats);
-
-    // Emergency check: if player falls below a certain point, reset position
-    if (player.y > WORLD_HEIGHT * TILE_SIZE * 2) {
-      console.log("Player fell too far, resetting position");
-      player.x = app.screen.width / 2;
-      player.y = 0;
-      player.vy = 0;
-    }
-  });
-})();
+// Handle window resize
+window.addEventListener('resize', () => {
+  cameraController.handleResize();
+  lightingSystem.handleResize();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
