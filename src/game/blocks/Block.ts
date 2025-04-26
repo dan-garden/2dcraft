@@ -27,16 +27,9 @@ export abstract class Block {
   // How difficult the block is to break (higher value = harder)
   // Default is 1.0 (normal difficulty)
   readonly hardness: number = 1.0;
-
-  // Light emission properties
-  readonly isLightSource: boolean = false;
-  readonly lightIntensity: number = 0.0;
-  readonly lightColor: number = 0xFFFFFF;
-  readonly lightRadius: number = 0.0;
-
   // Optional: Future properties
   // blastResistance?: number; // Resistance to explosions
   // lightLevel?: number; // Light emitted by the block
 
-  constructor() {}
+  constructor() { }
 } 

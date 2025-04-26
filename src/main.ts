@@ -20,9 +20,14 @@ const world = new World(Math.random().toString()); // Changed seed for testing
 // Three.js setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); // Sky blue background color
+
+// Define camera settings
 const initialViewWidth = Math.ceil(window.innerWidth / 16);
 const initialViewHeight = Math.ceil(window.innerHeight / 16);
-const camera = new THREE.OrthographicCamera(
+const aspect = window.innerWidth / window.innerHeight;
+
+// Create cameras - both orthographic and perspective
+const orthographicCamera = new THREE.OrthographicCamera(
   -initialViewWidth / 2,
   initialViewWidth / 2,
   initialViewHeight / 2,
@@ -30,7 +35,20 @@ const camera = new THREE.OrthographicCamera(
   -1000,
   1000
 );
-camera.position.z = 1;
+
+const perspectiveCamera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
+
+// Choose which camera to start with
+const use2DMode = false; // Always use 2.5D mode
+const activeCamera = perspectiveCamera; // Always use perspective camera
+
+// Create fog for distance fading in perspective mode
+scene.fog = new THREE.Fog(0x87CEEB, 30, 100);
+
+// Add subtle ambient occlusion for depth perception
+const aoTex = new THREE.TextureLoader().load('./assets/textures/ao_map.png');
+aoTex.wrapS = THREE.RepeatWrapping;
+aoTex.wrapT = THREE.RepeatWrapping;
 
 // Set renderer with proper pixel ratio
 const renderer = new THREE.WebGLRenderer({
@@ -44,10 +62,12 @@ renderer.sortObjects = true; // Enable sorting by renderOrder
 renderer.outputColorSpace = THREE.SRGBColorSpace; // More balanced color space
 renderer.toneMapping = THREE.ACESFilmicToneMapping; // Subtle tone mapping for balance
 renderer.toneMappingExposure = 0.9; // Slightly reduce exposure for balanced contrast
+renderer.shadowMap.enabled = true; // Enable shadows
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Use soft shadows
 document.body.appendChild(renderer.domElement);
 
 // Initialize controllers and utilities
-const cameraController = new CameraController(camera);
+const cameraController = new CameraController(activeCamera, 1, true); // Always use perspective mode
 const inputController = new InputController();
 const debugInfo = new DebugInfo();
 
@@ -83,7 +103,7 @@ function worldToChunkCoords(x: number, y: number) {
 }
 
 // After initializing controllers and player, connect them
-inputController.setReferences(cameraController, world, player, debugInfo);
+inputController.setReferences(cameraController, world, player, debugInfo, scene);
 
 // Register debug callbacks for world, player, and input controller
 debugInfo.onDebugToggle((enabled) => {
@@ -157,7 +177,7 @@ function animate() {
     blockX,
     blockY,
     playerPos,
-    camera,
+    activeCamera,
     cameraController.getViewSize(),
     player.getVelocity(),
     player.isGrounded(),
@@ -173,10 +193,10 @@ function animate() {
   }
 
   // Render with camera position and camera
-  instRenderer.render(world, cameraController.getPosition(), camera);
+  instRenderer.render(world, cameraController.getPosition(), activeCamera);
 
   // Final render of the scene
-  renderer.render(scene, camera);
+  renderer.render(scene, activeCamera);
 }
 
 animate();
@@ -185,4 +205,8 @@ animate();
 window.addEventListener('resize', () => {
   cameraController.handleResize();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  if (activeCamera instanceof THREE.PerspectiveCamera) {
+    activeCamera.aspect = window.innerWidth / window.innerHeight;
+    activeCamera.updateProjectionMatrix();
+  }
 });

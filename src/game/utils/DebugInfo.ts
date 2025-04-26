@@ -357,4 +357,13 @@ export class DebugInfo {
 
     return borderMesh;
   }
+
+  /**
+   * Update just the hover block information without updating everything else
+   * This is called directly from the InputController when the mouse moves
+   */
+  public updateHoverInfo(blockName: string, x: number, y: number): void {
+    if (!this.debugMode) return; // Skip updates if debug mode is off
+    this.worldInfo.textContent = `Block: ${blockName} (${x}, ${y})`;
+  }
 } 

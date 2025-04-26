@@ -33,6 +33,10 @@ export class InputController {
   private hotbarSelectionCallbacks: ((index: number) => void)[] = [];
   private hotbarScrollCallbacks: ((direction: number) => void)[] = [];
 
+  // Block selection visual indicator
+  private blockSelector: THREE.LineSegments;
+  private blockSelectorVisible: boolean = true;
+
   // Track debug specific command keys
   private debugCommandKeys: { [key: string]: boolean } = {
     b: false,  // Place a tree at mouse cursor position
@@ -47,6 +51,7 @@ export class InputController {
   private world: World | null = null;
   private player: Player | null = null;
   private debugInfo: DebugInfo | null = null;
+  private scene: THREE.Scene | null = null;
 
   constructor() {
     this.keys = {
@@ -67,6 +72,19 @@ export class InputController {
       right: false
     };
 
+    // Create block selector wireframe - make it slightly larger than the block
+    // and with thicker lines for better visibility
+    const selectorGeometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.05, 1.05, 1.05));
+    const selectorMaterial = new THREE.LineBasicMaterial({
+      color: 0xffff00, // Bright yellow for better visibility
+      linewidth: 2, // Thicker lines (note: this has limited support)
+      transparent: true,
+      opacity: 0.8
+    });
+    this.blockSelector = new THREE.LineSegments(selectorGeometry, selectorMaterial);
+    this.blockSelector.renderOrder = 999; // Render on top of everything else
+    this.blockSelector.visible = false;
+
     // Set up global event handlers
     this.initializeKeyboardEvents();
   }
@@ -74,11 +92,17 @@ export class InputController {
   /**
    * Set external references needed for input processing
    */
-  public setReferences(cameraController: CameraController, world: World, player: Player, debugInfo: DebugInfo) {
+  public setReferences(cameraController: CameraController, world: World, player: Player, debugInfo: DebugInfo, scene?: THREE.Scene) {
     this.cameraController = cameraController;
     this.world = world;
     this.player = player;
     this.debugInfo = debugInfo;
+
+    // Add block selector to scene if provided
+    if (scene) {
+      this.scene = scene;
+      scene.add(this.blockSelector);
+    }
   }
 
   /**
@@ -107,6 +131,12 @@ export class InputController {
           });
         });
       }
+
+      // H key to toggle block selector visibility
+      if (e.key === 'h') {
+        const isVisible = this.toggleBlockSelector();
+        console.log(`Block selector ${isVisible ? 'visible' : 'hidden'}`);
+      }
     });
 
     document.addEventListener('keyup', (e) => {
@@ -127,19 +157,89 @@ export class InputController {
   initialize(element: HTMLElement) {
     // Mouse move event
     element.addEventListener('mousemove', (event) => {
-      // Store normalized screen coordinates (-1 to 1)
-      this.screenMousePosition.x = (event.clientX / element.clientWidth) * 2 - 1;
-      this.screenMousePosition.y = -(event.clientY / element.clientHeight) * 2 + 1;
+      // Store actual client mouse position
+      const clientX = event.clientX;
+      const clientY = event.clientY;
 
-      // Convert to world coordinates
-      if (this.cameraController) {
-        this.mousePosition = this.cameraController.getWorldPositionFromScreen(
-          this.screenMousePosition.x,
-          this.screenMousePosition.y
+      // Store normalized screen coordinates (-1 to 1)
+      this.screenMousePosition.x = (clientX / element.clientWidth) * 2 - 1;
+      this.screenMousePosition.y = -(clientY / element.clientHeight) * 2 + 1;
+
+      if (this.cameraController && this.world) {
+        // Use raycasting directly for 2.5D mode
+        const raycaster = new THREE.Raycaster();
+        const camera = this.cameraController['camera']; // Access the camera from controller
+
+        // Set up raycaster from camera through mouse point
+        raycaster.setFromCamera(
+          new THREE.Vector2(this.screenMousePosition.x, this.screenMousePosition.y),
+          camera
         );
 
-        // Update hover block
-        this.updateHoverBlock();
+        // Instead of assuming z=0, we need to find the correct intersection with the z-offset
+        // Use a series of planes at different depths to find the correct intersection
+        const layerStep = 0.05; // Match the layerStep in InstancedRenderer
+
+        // Start with a ray extent into the scene
+        const rayOrigin = raycaster.ray.origin.clone();
+        const rayDirection = raycaster.ray.direction.clone().normalize();
+        const maxDistance = 100; // Maximum ray distance
+        const rayEnd = rayOrigin.clone().add(rayDirection.clone().multiplyScalar(maxDistance));
+
+        // Attempt to find intersection with blocks
+        let foundIntersection = false;
+        let closestIntersection = null;
+        let closestDistanceSq = Infinity;
+
+        // Check collision with a range of y-coordinates (from camera y - 20 to camera y + 20)
+        const cameraY = this.cameraController.getPosition().y;
+        const yStart = Math.floor(cameraY) - 20;
+        const yEnd = Math.floor(cameraY) + 20;
+
+        for (let y = yStart; y <= yEnd; y++) {
+          // Calculate z-offset for this row of blocks (match the InstancedRenderer formula)
+          const zPos = -y * layerStep;
+
+          // Create a plane at this z-position
+          const gamePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -zPos);
+          const intersectionPoint = new THREE.Vector3();
+
+          // Find intersection with this plane
+          if (raycaster.ray.intersectPlane(gamePlane, intersectionPoint)) {
+            // Check if this is the closest intersection
+            const distanceSq = intersectionPoint.distanceToSquared(rayOrigin);
+
+            if (distanceSq < closestDistanceSq) {
+              // Check if there's actually a block at these coordinates
+              const blockX = Math.floor(intersectionPoint.x);
+              const blockY = Math.floor(intersectionPoint.y);
+
+              // Only update if this y matches the plane y we're checking
+              if (blockY === y) {
+                closestDistanceSq = distanceSq;
+                closestIntersection = intersectionPoint;
+                foundIntersection = true;
+              }
+            }
+          }
+        }
+
+        // If we found a valid intersection, update mouse position
+        if (foundIntersection && closestIntersection) {
+          this.mousePosition.x = closestIntersection.x;
+          this.mousePosition.y = closestIntersection.y;
+
+          // Update hover block
+          this.updateHoverBlock();
+
+          // Update debug info if available - this ensures hover info is updated in real-time
+          if (this.debugInfo && this.world && this.hoverBlock) {
+            const block = this.world.getBlockAt(this.hoverBlock.x, this.hoverBlock.y);
+            this.debugInfo.updateHoverInfo(block.name, this.hoverBlock.x, this.hoverBlock.y);
+          }
+        } else if (this.isDebugMode()) {
+          console.warn("No intersection with game planes");
+        }
       }
     });
 
@@ -232,7 +332,7 @@ export class InputController {
 
     const playerPos = this.player.getPosition();
 
-    // Calculate the block coordinates
+    // Get block coordinates from world position
     const blockX = Math.floor(this.mousePosition.x);
     const blockY = Math.floor(this.mousePosition.y);
 
@@ -242,27 +342,72 @@ export class InputController {
       Math.pow(playerPos.y - (blockY + 0.5), 2)
     );
 
+    // Default to no hover
+    let validHover = false;
+
     // If in debug mode, ignore distance restrictions
     if (this.isDebugMode()) {
       this.hoverBlock = { x: blockX, y: blockY };
+      validHover = true;
 
-      // if (this.isDebugMode()) {
-      //   console.log(`Hovering over block at (${blockX}, ${blockY}), distance: ${distance.toFixed(2)}`);
-      // }
+      if (this.debugCommandKeys['d']) {
+        console.log(`----- HOVER DEBUG -----`);
+        console.log(`Hovering block: (${blockX}, ${blockY})`);
+        console.log(`Block type: ${this.world.getBlockAt(blockX, blockY).name}`);
+        console.log(`Player position: (${playerPos.x.toFixed(2)}, ${playerPos.y.toFixed(2)})`);
+        console.log(`Mouse world position: (${this.mousePosition.x.toFixed(2)}, ${this.mousePosition.y.toFixed(2)})`);
+        console.log(`Mouse screen position: (${this.screenMousePosition.x.toFixed(2)}, ${this.screenMousePosition.y.toFixed(2)})`);
+        console.log(`Distance to player: ${distance.toFixed(2)}`);
+        console.log(`---------------------`);
+      }
     }
     // If not in debug mode, only allow interaction within range
-    else if (distance <= this.interactionDistance) {
+    else if (distance <= this.interactionDistance * 1.5) { // Use increased interaction distance for 2.5D mode
       this.hoverBlock = { x: blockX, y: blockY };
+      validHover = true;
     } else {
       this.hoverBlock = null;
     }
+
+    // Update block selector position
+    if (validHover && this.blockSelectorVisible && this.scene) {
+      const layerStep = 0.05; // Match the layerStep in InstancedRenderer
+      const zPos = -blockY * layerStep; // Match the z calculation in InstancedRenderer
+
+      this.blockSelector.position.set(blockX + 0.5, blockY + 0.5, zPos);
+      this.blockSelector.visible = true;
+    } else if (this.blockSelector) {
+      this.blockSelector.visible = false;
+    }
+  }
+
+  /**
+   * Toggle the visibility of the block selector
+   */
+  public toggleBlockSelector(visible?: boolean) {
+    if (visible !== undefined) {
+      this.blockSelectorVisible = visible;
+    } else {
+      this.blockSelectorVisible = !this.blockSelectorVisible;
+    }
+
+    if (this.blockSelector) {
+      this.blockSelector.visible = this.blockSelectorVisible && this.hoverBlock !== null;
+    }
+
+    return this.blockSelectorVisible;
   }
 
   /**
    * Process mouse clicks on blocks
    */
   private processClick() {
-    if (!this.hoverBlock || !this.world) return;
+    if (!this.hoverBlock || !this.world) {
+      if (this.isDebugMode()) {
+        console.log("No block hovered or world not available");
+      }
+      return;
+    }
 
     const { x, y } = this.hoverBlock;
 
@@ -270,8 +415,8 @@ export class InputController {
     const block = this.world.getBlockAt(x, y);
 
     if (this.isDebugMode()) {
-      // console.log(`Clicked on block: ${block.name} (ID: ${block.id}) at (${x}, ${y})`);
-      // console.log(`Mouse state: left=${this.mouseState.left}, right=${this.mouseState.right}`);
+      console.log(`Clicked on block: ${block.name} (ID: ${block.id}) at (${x}, ${y})`);
+      console.log(`Mouse state: left=${this.mouseState.left}, right=${this.mouseState.right}`);
     }
 
     // Left click = mine
