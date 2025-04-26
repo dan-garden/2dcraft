@@ -20,7 +20,6 @@ export class DebugInfo {
   private playerPositionInfo: HTMLDivElement;
   private biomeInfo: HTMLDivElement;
   private inventoryInfo: HTMLDivElement;
-  private lightingInfo: HTMLDivElement;
   private chunkBordersButton: HTMLButtonElement;
   private toggleButton!: HTMLButtonElement;
   private showChunkBorders: boolean = false;
@@ -28,7 +27,7 @@ export class DebugInfo {
   private scene: THREE.Scene | null = null;
   private debugMode: boolean = false;
   private isMinimized: boolean = false;
-  
+
   // Registry of debug mode listeners
   private debugToggleListeners: DebugToggleCallback[] = [];
 
@@ -61,11 +60,11 @@ export class DebugInfo {
     header.style.justifyContent = 'space-between';
     header.style.alignItems = 'center';
     header.style.marginBottom = '5px';
-    
+
     const title = document.createElement('div');
     title.textContent = 'Debug Info';
     title.style.fontWeight = 'bold';
-    
+
     const minimizeButton = document.createElement('button');
     minimizeButton.textContent = '-';
     minimizeButton.style.backgroundColor = '#555';
@@ -76,7 +75,7 @@ export class DebugInfo {
     minimizeButton.style.height = '20px';
     minimizeButton.style.cursor = 'pointer';
     minimizeButton.addEventListener('click', () => this.toggleMinimize());
-    
+
     header.appendChild(title);
     header.appendChild(minimizeButton);
     this.element.appendChild(header);
@@ -90,7 +89,6 @@ export class DebugInfo {
     this.playerPositionInfo = this.createInfoElement();
     this.biomeInfo = this.createInfoElement();
     this.inventoryInfo = this.createInfoElement();
-    this.lightingInfo = this.createInfoElement();
 
     // Create chunk borders toggle button
     this.chunkBordersButton = document.createElement('button');
@@ -114,9 +112,8 @@ export class DebugInfo {
     this.element.appendChild(this.cameraInfo);
     this.element.appendChild(this.renderInfo);
     this.element.appendChild(this.viewInfo);
-    this.element.appendChild(this.lightingInfo);
     this.element.appendChild(this.chunkBordersButton);
-    
+
     document.body.appendChild(this.element);
   }
 
@@ -134,7 +131,7 @@ export class DebugInfo {
     this.toggleButton.style.cursor = 'pointer';
     this.toggleButton.style.zIndex = '1000';
     this.toggleButton.addEventListener('click', () => this.toggleDebugMode());
-    
+
     document.body.appendChild(this.toggleButton);
   }
 
@@ -151,7 +148,7 @@ export class DebugInfo {
   // Toggle between minimized and full view
   private toggleMinimize() {
     this.isMinimized = !this.isMinimized;
-    
+
     // Show only header when minimized
     const children = Array.from(this.element.children);
     for (let i = 1; i < children.length; i++) {
@@ -161,7 +158,7 @@ export class DebugInfo {
     // Update the minimize button text
     const minimizeButton = children[0].children[1] as HTMLButtonElement;
     minimizeButton.textContent = this.isMinimized ? '+' : '-';
-    
+
     // Adjust container size
     if (this.isMinimized) {
       this.element.style.maxHeight = 'auto';
@@ -190,17 +187,17 @@ export class DebugInfo {
   // Method to set debug mode - central source of truth
   setDebugMode(enabled: boolean): void {
     if (this.debugMode === enabled) return; // No change
-    
+
     this.debugMode = enabled;
     this.element.style.display = enabled ? 'flex' : 'none';
-    
+
     // Update toggle button appearance
-    this.toggleButton.style.backgroundColor = enabled 
-      ? 'rgba(0,150,0,0.7)' 
+    this.toggleButton.style.backgroundColor = enabled
+      ? 'rgba(0,150,0,0.7)'
       : 'rgba(0,0,0,0.5)';
-    
+
     console.log(`Debug mode: ${enabled ? 'ON' : 'OFF'}`);
-    
+
     // Notify all registered listeners
     this.debugToggleListeners.forEach(callback => {
       callback(enabled);
@@ -208,10 +205,10 @@ export class DebugInfo {
   }
 
   update(
-    blockName: string, 
-    x: number, 
-    y: number, 
-    cameraPos?: THREE.Vector2, 
+    blockName: string,
+    x: number,
+    y: number,
+    cameraPos?: THREE.Vector2,
     camera?: THREE.Camera,
     viewSize?: { width: number; height: number },
     playerVelocity?: THREE.Vector2,
@@ -219,13 +216,12 @@ export class DebugInfo {
     biomeName?: string,
     heightAtPosition?: number,
     isFlyMode?: boolean,
-    selectedBlock?: InventoryItem | null,
-    lightCount?: number
+    selectedBlock?: InventoryItem | null
   ) {
     if (!this.debugMode) return; // Skip updates if debug mode is off
-    
+
     this.worldInfo.textContent = `Block: ${blockName} (${x}, ${y})`;
-    
+
     if (cameraPos) {
       this.playerPositionInfo.textContent = `Pos: (${cameraPos.x.toFixed(1)}, ${cameraPos.y.toFixed(1)})`;
       this.cameraInfo.textContent = `Cam: (${cameraPos.x.toFixed(1)}, ${cameraPos.y.toFixed(1)})`;
@@ -241,36 +237,29 @@ export class DebugInfo {
 
     if (playerVelocity) {
       let playerStateText = '';
-      
+
       if (isFlyMode !== undefined) {
         playerStateText = `FLY:${isFlyMode ? 'ON' : 'OFF'} | `;
       }
-      
+
       if (isGrounded !== undefined) {
         playerStateText += `Ground:${isGrounded}`;
       }
-      
+
       this.playerInfo.textContent = `Vel: (${playerVelocity.x.toFixed(2)}, ${playerVelocity.y.toFixed(2)}) | ${playerStateText}`;
     }
-    
+
     if (biomeName && heightAtPosition !== undefined) {
       this.biomeInfo.textContent = `Biome: ${biomeName} | Height: ${heightAtPosition.toFixed(1)}`;
     } else {
       this.biomeInfo.textContent = '';
     }
-    
+
     // Update inventory info
     if (selectedBlock) {
       this.inventoryInfo.textContent = `Block: #${selectedBlock.blockId} (${selectedBlock.count})`;
     } else {
       this.inventoryInfo.textContent = 'No block selected';
-    }
-    
-    // Update lighting info
-    if (lightCount !== undefined) {
-      this.lightingInfo.textContent = `Lights: ${lightCount} active`;
-    } else {
-      this.lightingInfo.textContent = 'Lighting: -';
     }
   }
 
@@ -283,7 +272,7 @@ export class DebugInfo {
   private toggleChunkBorders() {
     this.showChunkBorders = !this.showChunkBorders;
     this.chunkBordersButton.innerText = `Chunks: ${this.showChunkBorders ? 'ON' : 'OFF'}`;
-    
+
     // Update visibility of existing borders
     this.chunkBorderMeshes.forEach(mesh => {
       if (mesh) mesh.visible = this.showChunkBorders;
@@ -298,17 +287,17 @@ export class DebugInfo {
   // Render chunk borders based on visible chunks
   updateChunkBorders(chunks: { x: number, y: number }[] | any[]) {
     if (!this.scene) return;
-    
+
     // Clean up old borders
     this.clearChunkBorders();
-    
+
     if (!this.showChunkBorders) return;
-    
+
     // Create new borders for each chunk
     chunks.forEach(chunk => {
       const chunkX = typeof chunk.x === 'number' ? chunk.x : chunk.chunkX;
       const chunkY = typeof chunk.y === 'number' ? chunk.y : chunk.chunkY;
-      
+
       if (chunkX !== undefined && chunkY !== undefined) {
         const border = this.createChunkBorderMesh(chunkX, chunkY);
         this.scene!.add(border);
@@ -316,11 +305,11 @@ export class DebugInfo {
       }
     });
   }
-  
+
   // Clear all chunk border meshes
   private clearChunkBorders() {
     if (!this.scene) return;
-    
+
     this.chunkBorderMeshes.forEach(mesh => {
       if (mesh) {
         this.scene!.remove(mesh);
@@ -332,40 +321,40 @@ export class DebugInfo {
         }
       }
     });
-    
+
     this.chunkBorderMeshes = [];
   }
-  
+
   // Create a border mesh for a chunk
   private createChunkBorderMesh(chunkX: number, chunkY: number): THREE.LineSegments {
     const chunkSize = Chunk.SIZE;
     const worldX = chunkX * chunkSize;
     const worldY = chunkY * chunkSize;
-    
+
     // Create geometry for a square outline
     const points = [
       // Bottom edge
       new THREE.Vector3(worldX, worldY, 0.2),
       new THREE.Vector3(worldX + chunkSize, worldY, 0.2),
-      
+
       // Right edge
       new THREE.Vector3(worldX + chunkSize, worldY, 0.2),
       new THREE.Vector3(worldX + chunkSize, worldY + chunkSize, 0.2),
-      
+
       // Top edge
       new THREE.Vector3(worldX + chunkSize, worldY + chunkSize, 0.2),
       new THREE.Vector3(worldX, worldY + chunkSize, 0.2),
-      
+
       // Left edge
       new THREE.Vector3(worldX, worldY + chunkSize, 0.2),
       new THREE.Vector3(worldX, worldY, 0.2)
     ];
-    
+
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const material = new THREE.LineBasicMaterial({ color: 0xffff00 });
     const borderMesh = new THREE.LineSegments(geometry, material);
     borderMesh.visible = this.showChunkBorders;
-    
+
     return borderMesh;
   }
 } 

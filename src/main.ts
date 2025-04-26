@@ -6,7 +6,6 @@ import { CameraController } from './game/controllers/CameraController';
 import { InputController } from './game/controllers/InputController';
 import { DebugInfo } from './game/utils/DebugInfo';
 import { Player } from './game/entities/Player';
-import { LightingSystem } from './game/renderer/LightingSystem';
 
 // Initial buffer distance for world generation
 const WORLD_BUFFER = 5;
@@ -24,17 +23,17 @@ scene.background = new THREE.Color(0x87CEEB); // Sky blue background color
 const initialViewWidth = Math.ceil(window.innerWidth / 16);
 const initialViewHeight = Math.ceil(window.innerHeight / 16);
 const camera = new THREE.OrthographicCamera(
-  -initialViewWidth / 2, 
-  initialViewWidth / 2, 
-  initialViewHeight / 2, 
-  -initialViewHeight / 2, 
-  -1000, 
+  -initialViewWidth / 2,
+  initialViewWidth / 2,
+  initialViewHeight / 2,
+  -initialViewHeight / 2,
+  -1000,
   1000
 );
 camera.position.z = 1;
 
 // Set renderer with proper pixel ratio
-const renderer = new THREE.WebGLRenderer({ 
+const renderer = new THREE.WebGLRenderer({
   antialias: false,
   alpha: true,
   preserveDrawingBuffer: true
@@ -51,9 +50,6 @@ document.body.appendChild(renderer.domElement);
 const cameraController = new CameraController(camera);
 const inputController = new InputController();
 const debugInfo = new DebugInfo();
-
-// Initialize the lighting system
-const lightingSystem = new LightingSystem(scene);
 
 // Set scene reference for debug info to render chunk borders
 debugInfo.setScene(scene);
@@ -123,42 +119,42 @@ function animate() {
 
   // Update player physics and controls
   player.update(world, inputController.getKeys());
-  
+
   // Get player position for camera to follow
   const playerPos = player.getPosition();
-  
+
   // Update camera to follow player
   cameraController.setPosition(playerPos.x, playerPos.y);
 
   // Update world chunks based on player position
   world.update(playerPos.x, playerPos.y);
-  
+
   // Get block at mouse position (from hover block)
   const hoverBlock = inputController.getHoverBlock();
   const blockX = hoverBlock ? hoverBlock.x : Math.floor(playerPos.x);
   const blockY = hoverBlock ? hoverBlock.y : Math.floor(playerPos.y);
   const block = world.getBlockAt(blockX, blockY);
-  
+
   // Get biome information at mouse position
   const biome = world.getBiomeGenerator().getBiomeAt(blockX, blockY);
   const biomeInfo = biome ? biome.name : 'None';
   const heightAtPos = world.getWorldGenerator().getHeightAt(blockX);
-  
+
   // Get chunk information
   const { chunkX, chunkY } = worldToChunkCoords(blockX, blockY);
   const chunks = world.getChunks();
   const chunkCount = chunks.length;
-  
+
   // Add chunk information to debugging
   document.title = `Game World - Chunks: ${chunkCount} - Biome: ${biomeInfo}`;
-  
+
   // Get selected block from inventory
   const selectedBlock = player.getSelectedBlock();
-  
+
   // Update debug info with camera, view, and biome information
   debugInfo.update(
-    block.name, 
-    blockX, 
+    block.name,
+    blockX,
     blockY,
     playerPos,
     camera,
@@ -168,8 +164,7 @@ function animate() {
     `${biomeInfo} (Chunk: ${chunkX},${chunkY})`,
     heightAtPos,
     player.isFlyModeEnabled(),
-    selectedBlock,
-    lightingSystem.getLightCount()
+    selectedBlock
   );
 
   // Update chunk borders if enabled
@@ -179,10 +174,7 @@ function animate() {
 
   // Render with camera position and camera
   instRenderer.render(world, cameraController.getPosition(), camera);
-  
-  // Update lighting system
-  lightingSystem.update(world, cameraController.getPosition(), camera as THREE.OrthographicCamera);
-  
+
   // Final render of the scene
   renderer.render(scene, camera);
 }
@@ -192,6 +184,5 @@ animate();
 // Handle window resize
 window.addEventListener('resize', () => {
   cameraController.handleResize();
-  lightingSystem.handleResize();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });

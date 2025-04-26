@@ -19,7 +19,7 @@ export class InstancedRenderer {
     const baseGeom = new THREE.PlaneGeometry(1, 1);
 
     blocks.forEach(block => {
-      const matParams: THREE.MeshBasicMaterialParameters = { 
+      const matParams: THREE.MeshBasicMaterialParameters = {
         side: THREE.DoubleSide,
         transparent: !block.isSolid || block.isTransparent,
         depthWrite: block.isSolid && !block.isTransparent,
@@ -33,28 +33,28 @@ export class InstancedRenderer {
         tex.magFilter = THREE.NearestFilter;
         tex.minFilter = THREE.NearestFilter;
         tex.generateMipmaps = false;
-        
+
         // Don't premultiply alpha for transparent textures
         tex.premultiplyAlpha = !block.isTransparent;
-        
+
         // Improve texture contrast with correct colorspace
         tex.colorSpace = THREE.SRGBColorSpace;
-        
+
         matParams.map = tex;
-        
+
         if (block.isTransparent) {
           matParams.transparent = true;
           matParams.alphaTest = 0.01;
           matParams.blending = THREE.NormalBlending;
         }
-        
+
         if (block.tinted) {
           matParams.color = new THREE.Color(block.color);
           matParams.vertexColors = false;
-          
-          if (block.isTransparent) { 
-              matParams.blending = THREE.NormalBlending;
-              matParams.alphaTest = 0.01;
+
+          if (block.isTransparent) {
+            matParams.blending = THREE.NormalBlending;
+            matParams.alphaTest = 0.01;
           }
         } else {
           // For untinted textures, use exact colors from texture
@@ -70,7 +70,7 @@ export class InstancedRenderer {
       const mesh = new THREE.InstancedMesh(baseGeom, material, maxInstancesPerBlock);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.frustumCulled = false;
-      
+
       // Set z-position for proper layering
       // Since THREE.js renders in order of z-index (negative values are further away)
       // Ensure blocks are always in front of the background
@@ -84,7 +84,7 @@ export class InstancedRenderer {
         // Solid blocks
         mesh.renderOrder = 0;
       }
-      
+
       scene.add(mesh);
       this.meshes.set(block.id, mesh);
     });
@@ -108,16 +108,16 @@ export class InstancedRenderer {
     const modifiedBlocks = world.getModifiedBlocks();
 
     // Calculate the area to render around the camera (visible area + buffer)
-    const startX = Math.floor(cameraPosition.x - viewWidth/2 - this.renderBuffer);
-    const endX = Math.ceil(cameraPosition.x + viewWidth/2 + this.renderBuffer);
-    const startY = Math.floor(cameraPosition.y - viewHeight/2 - this.renderBuffer);
-    const endY = Math.ceil(cameraPosition.y + viewHeight/2 + this.renderBuffer);
+    const startX = Math.floor(cameraPosition.x - viewWidth / 2 - this.renderBuffer);
+    const endX = Math.ceil(cameraPosition.x + viewWidth / 2 + this.renderBuffer);
+    const startY = Math.floor(cameraPosition.y - viewHeight / 2 - this.renderBuffer);
+    const endY = Math.ceil(cameraPosition.y + viewHeight / 2 + this.renderBuffer);
 
     // First render modified blocks
     modifiedBlocks.forEach((blockId, key) => {
       // Skip rendering air blocks - they're handled by the parallax background
       if (blockId === 0) return;
-      
+
       const [x, y] = key.split(',').map(Number);
       const mesh = this.meshes.get(blockId);
       if (!mesh || mesh.count >= mesh.instanceMatrix.count) return;
@@ -137,17 +137,17 @@ export class InstancedRenderer {
     for (let y = startY; y <= endY; y++) {
       for (let x = startX; x <= endX; x++) {
         const blockKey = `${x},${y}`;
-        
+
         // Skip if block is modified (already rendered)
         if (modifiedBlocks.has(blockKey)) {
           continue;
         }
 
         const block = world.getBlockAt(x, y);
-        
+
         // Skip rendering air blocks - they're handled by the parallax background
         if (block.id === 0) continue;
-        
+
         const mesh = this.meshes.get(block.id);
         if (!mesh || mesh.count >= mesh.instanceMatrix.count) continue;
 
