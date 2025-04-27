@@ -64,7 +64,7 @@ export class Player {
   private inventory: Inventory;
 
   // Mining and building properties
-  private readonly interactionDistance = 3; // Max distance for mining/placing blocks
+  private readonly interactionDistance = 5; // Max distance for mining/placing blocks (increased for better 2.5D perspective)
 
   constructor(scene: THREE.Scene, x: number, y: number) {
     this.position = new THREE.Vector2(x, y);
@@ -795,5 +795,9 @@ export class Player {
   // Add a method to get the actual gameplay grounded state when needed
   public isGameplayGrounded(): boolean {
     return this.grounded;
+  }
+
+  public getInteractionDistance(): number {
+    return this.interactionDistance;
   }
 } 
