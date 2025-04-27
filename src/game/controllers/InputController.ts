@@ -49,6 +49,9 @@ export class InputController {
   private lastMouseState: { left: boolean, right: boolean } = { left: false, right: false };
   private hoverBlock: { x: number, y: number } | null = null;
 
+  // Track last interacted block to prevent multiple interactions with same block during drag
+  private lastInteractedBlock: { x: number, y: number } | null = null;
+
   // Key bindings map (key -> action)
   private keyBindings: { [key: string]: KeyAction } = {
     'w': 'moveUp',
@@ -155,6 +158,7 @@ export class InputController {
     document.addEventListener('mouseup', (event) => {
       if (event.button === 0) {
         this.mouseState.left = false;
+        this.lastInteractedBlock = null; // Reset last interacted block on mouse up
       }
       if (event.button === 2) {
         this.mouseState.right = false;
@@ -248,6 +252,8 @@ export class InputController {
       // Left click (mine)
       if (event.button === 0) {
         this.mouseState.left = true;
+        // Reset the last interacted block to allow new interactions 
+        this.lastInteractedBlock = null;
       }
       // Right click (place)
       if (event.button === 2) {
@@ -264,6 +270,8 @@ export class InputController {
       // Left click (mine)
       if (event.button === 0) {
         this.mouseState.left = false;
+        // Reset the last interacted block when releasing mouse button
+        this.lastInteractedBlock = null;
       }
       // Right click (place)
       if (event.button === 2) {
@@ -315,6 +323,61 @@ export class InputController {
         this.mousePosition.x = intersection.x;
         this.mousePosition.y = intersection.y;
         this.updateHoverBlock();
+
+        // Process drag interactions if mouse button is held down
+        if (this.mouseState.left || this.mouseState.right) {
+          this.processDragInteraction();
+        }
+      }
+    }
+  }
+
+  /**
+   * Process block interactions while dragging the mouse
+   */
+  private processDragInteraction() {
+    // Only process drag interactions in debug mode
+    if (!this.isDebugMode() || !this.hoverBlock) return;
+
+    // Check if this is a new block (different from the last one we interacted with)
+    const isSameBlock = this.lastInteractedBlock &&
+      this.lastInteractedBlock.x === this.hoverBlock.x &&
+      this.lastInteractedBlock.y === this.hoverBlock.y;
+
+    // Skip if we're still on the same block
+    if (isSameBlock) return;
+
+    // Process the block interaction
+    if (this.mouseState.left) {
+      // Breaking blocks while dragging (left mouse button)
+      const block = this.world?.getBlockAt(this.hoverBlock.x, this.hoverBlock.y);
+      if (block && block.id !== 0) { // Don't mine air
+        this.blockInteractionCallbacks.forEach(callback => {
+          callback({
+            type: 'mine',
+            blockX: this.hoverBlock!.x,
+            blockY: this.hoverBlock!.y
+          });
+        });
+
+        // Update last interacted block
+        this.lastInteractedBlock = { ...this.hoverBlock };
+      }
+    }
+    else if (this.mouseState.right) {
+      // Placing blocks while dragging (right mouse button)
+      const block = this.world?.getBlockAt(this.hoverBlock.x, this.hoverBlock.y);
+      if (block && block.id === 0) { // Only place on air
+        this.blockInteractionCallbacks.forEach(callback => {
+          callback({
+            type: 'place',
+            blockX: this.hoverBlock!.x,
+            blockY: this.hoverBlock!.y
+          });
+        });
+
+        // Update last interacted block
+        this.lastInteractedBlock = { ...this.hoverBlock };
       }
     }
   }
@@ -485,6 +548,9 @@ export class InputController {
         this.blockInteractionCallbacks.forEach(callback => {
           callback({ type: 'mine', blockX: x, blockY: y });
         });
+
+        // Update last interacted block
+        this.lastInteractedBlock = { x, y };
       }
     }
 
@@ -494,6 +560,9 @@ export class InputController {
         this.blockInteractionCallbacks.forEach(callback => {
           callback({ type: 'place', blockX: x, blockY: y });
         });
+
+        // Update last interacted block
+        this.lastInteractedBlock = { x, y };
       }
     }
   }
