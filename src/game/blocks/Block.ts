@@ -20,6 +20,9 @@ export abstract class Block {
   // Whether to tint the texture with the block's color
   readonly tinted: boolean = false;
 
+  // Whether this block should be registered in the registry
+  readonly shouldRegister: boolean = true;
+
   // Friction coefficient for movement (higher = more grip, lower = more slippery)
   // Default is 1.0 (normal friction)
   readonly friction: number = 1.0;
@@ -36,6 +39,37 @@ export abstract class Block {
   // x, y: The block's position in the world
   // deltaTime: Time elapsed since last tick in milliseconds
   onTick?(world: any, x: number, y: number, deltaTime: number): void { }
+
+  // Optional onRightClick method called when a player right-clicks on this block
+  // world: The game world instance
+  // x, y: The block's position in the world
+  // player: The player that right-clicked the block
+  onRightClick?(world: any, x: number, y: number, player: any): void { }
+
+  // Optional onBeforeBreak method called before a block is broken
+  // world: The game world instance
+  // x, y: The block's position in the world
+  // player: The player attempting to break the block
+  // Returns: boolean indicating whether the break should be allowed
+  onBeforeBreak?(world: any, x: number, y: number, player: any): boolean { return true; }
+
+  // Optional onAfterBreak method called after a block is broken
+  // world: The game world instance
+  // x, y: The block's position in the world
+  // player: The player that broke the block
+  onAfterBreak?(world: any, x: number, y: number, player: any): void { }
+
+  // Optional onWalkOver method called when a player walks over this block
+  // world: The game world instance
+  // x, y: The block's position in the world
+  // player: The player walking over the block
+  onWalkOver?(world: any, x: number, y: number, player: any): void { }
+
+  // Optional onMouseHover method called when the mouse hovers over this block
+  // world: The game world instance
+  // x, y: The block's position in the world
+  // player: The player whose mouse is hovering
+  onMouseHover?(world: any, x: number, y: number, player: any): void { }
 
   // Optional: Future properties
   // blastResistance?: number; // Resistance to explosions

@@ -5,7 +5,7 @@ import { Player } from '../entities/Player';
 import { DebugInfo } from '../utils/DebugInfo';
 
 interface BlockInteractionEvent {
-  type: 'mine' | 'place';
+  type: 'mine' | 'place' | 'rightClick';
   blockX: number;
   blockY: number;
 }
@@ -48,6 +48,7 @@ export class InputController {
   private mouseState: { left: boolean, right: boolean } = { left: false, right: false };
   private lastMouseState: { left: boolean, right: boolean } = { left: false, right: false };
   private hoverBlock: { x: number, y: number } | null = null;
+  private lastHoverBlock: { x: number, y: number } | null = null;
 
   // Track last interacted block to prevent multiple interactions with same block during drag
   private lastInteractedBlock: { x: number, y: number } | null = null;
@@ -462,12 +463,23 @@ export class InputController {
         const block = this.world.getBlockAt(blockX, blockY);
         this.debugInfo.updateHoverInfo(block.name, blockX, blockY);
       }
+
+      // Call onMouseHover if the block has changed
+      if (this.hoverBlock &&
+        (!this.lastHoverBlock ||
+          this.lastHoverBlock.x !== blockX ||
+          this.lastHoverBlock.y !== blockY)) {
+        this.player.handleMouseHover(this.world, blockX, blockY);
+      }
     } else {
       this.hoverBlock = null;
       if (this.blockSelector) {
         this.blockSelector.visible = false;
       }
     }
+
+    // Store the last hover block for comparison
+    this.lastHoverBlock = this.hoverBlock;
   }
 
   /**
@@ -554,7 +566,7 @@ export class InputController {
       }
     }
 
-    // Right click = place (only if state changed)
+    // Right click = place or interact (only if state changed)
     if (this.mouseState.right && !this.lastMouseState.right) {
       if (block.id === 0) { // Only place on air
         this.blockInteractionCallbacks.forEach(callback => {
@@ -563,6 +575,11 @@ export class InputController {
 
         // Update last interacted block
         this.lastInteractedBlock = { x, y };
+      } else {
+        // Right-click on a non-air block triggers the block's onRightClick method
+        this.blockInteractionCallbacks.forEach(callback => {
+          callback({ type: 'rightClick', blockX: x, blockY: y });
+        });
       }
     }
   }

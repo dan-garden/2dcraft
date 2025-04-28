@@ -30,6 +30,7 @@ export class BlockRegistry {
 
   // Private constructor for singleton pattern
   private constructor() {
+    // Register base blocks
     [
       new Air(),
       new Dirt(),
@@ -52,7 +53,14 @@ export class BlockRegistry {
       new Glowstone(),
       new Glass(),
       new Wool(),
-    ].forEach((b: Block) => this.register(b));
+    ].forEach((b: Block) => {
+      if (b.shouldRegister) {
+        this.register(b);
+      }
+    });
+
+    // Register block variants
+    Wool.getAllVariants().forEach(variant => this.register(variant));
   }
 
   /**

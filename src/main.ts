@@ -137,6 +137,9 @@ function animate(timestamp: number) {
   // Update player physics and controls
   player.update(world, inputController.getKeys());
 
+  // Handle walk over events
+  player.handleWalkOver(world);
+
   // Update game tick system
   gameTick.update(timestamp);
 

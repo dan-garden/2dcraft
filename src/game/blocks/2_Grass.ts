@@ -1,3 +1,5 @@
+import { Player } from '../entities/Player';
+import { World } from '../world/World';
 import { Block } from './Block';
 
 export class Grass extends Block {

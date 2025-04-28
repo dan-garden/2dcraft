@@ -196,7 +196,7 @@ export class Player {
     this.inventory.scrollHotbar(direction);
   }
 
-  public handleBlockInteraction(type: 'mine' | 'place', x: number, y: number, world: World): void {
+  public handleBlockInteraction(type: 'mine' | 'place' | 'rightClick', x: number, y: number, world: World): void {
     // Calculate distance to the block
     const distance = Math.sqrt(
       Math.pow(this.position.x - (x + 0.5), 2) +
@@ -207,13 +207,57 @@ export class Player {
     if (distance > this.interactionDistance * 1.5) return;
 
     if (type === 'mine') {
+      // Get the block that will be mined
+      const block = world.getBlockAt(x, y);
+
+      // Check if the block can be mined
+      if (block.onBeforeBreak && !block.onBeforeBreak(world, x, y, this)) {
+        return; // Block prevents being mined
+      }
+
       this.mineBlock(world, x, y);
+
+      // Call onAfterBreak if it exists
+      if (block.onAfterBreak) {
+        block.onAfterBreak(world, x, y, this);
+      }
     } else if (type === 'place') {
       this.placeBlock(world, x, y);
+    } else if (type === 'rightClick') {
+      // Get the block that was right-clicked
+      const block = world.getBlockAt(x, y);
+
+      // Call the block's onRightClick method if it exists
+      if (block.onRightClick) {
+        block.onRightClick(world, x, y, this);
+      }
     }
   }
 
   public getInteractionDistance(): number {
     return this.interactionDistance;
+  }
+
+  // New method to handle player walking over blocks
+  public handleWalkOver(world: World): void {
+    // Get the block the player is standing on
+    const blockX = Math.floor(this.position.x);
+    const blockY = Math.floor(this.position.y - 0.1); // Slightly below player to get the block they're standing on
+    const block = world.getBlockAt(blockX, blockY);
+
+    // Call onWalkOver if it exists
+    if (block.onWalkOver) {
+      block.onWalkOver(world, blockX, blockY, this);
+    }
+  }
+
+  // New method to handle mouse hovering over blocks
+  public handleMouseHover(world: World, x: number, y: number): void {
+    const block = world.getBlockAt(x, y);
+
+    // Call onMouseHover if it exists
+    if (block.onMouseHover) {
+      block.onMouseHover(world, x, y, this);
+    }
   }
 } 
