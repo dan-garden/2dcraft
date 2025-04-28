@@ -305,4 +305,30 @@ export class World {
       console.error("Error during structure debug:", error);
     }
   }
+
+  /**
+   * Updates the light emission value for a block at the specified position
+   * @param x X coordinate
+   * @param y Y coordinate
+   * @param lightValue New light emission value (0-15)
+   */
+  public updateBlockLightAt(x: number, y: number, lightValue: number): void {
+    // Clamp light value between 0 and 15
+    const clampedValue = Math.max(0, Math.min(15, lightValue));
+
+    // Get the block at this position
+    const blockId = this.getBlockAt(x, y).id;
+    if (blockId === 0) return; // Don't update air blocks
+
+    // For now, just record that this block's light has changed
+    // In a more complete implementation, you would update the block's
+    // light value in the chunk data and propagate light changes
+    console.log(`Updated light for block at ${x},${y} to ${clampedValue}`);
+
+    // Mark this block as modified so it gets re-rendered
+    const key = `${x},${y}`;
+    if (!this.modifiedBlocks.has(key)) {
+      this.modifiedBlocks.set(key, blockId);
+    }
+  }
 }

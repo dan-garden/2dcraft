@@ -1,8 +1,8 @@
 import { Block } from './Block';
 
-export class Light extends Block {
+export class Glowstone extends Block {
   readonly id = 31;
-  readonly name = 'Light';
+  readonly name = 'Glowstone';
   readonly color = 0xFFFF77; // Yellow light
   readonly isSolid = true;
   readonly isTransparent = true;

@@ -31,6 +31,12 @@ export abstract class Block {
   // Light emission level (0-15, where 0 is no light and 15 is maximum brightness)
   readonly lightEmission: number = 0;
 
+  // Optional onTick method called every game tick for blocks in view
+  // world: The game world instance
+  // x, y: The block's position in the world
+  // deltaTime: Time elapsed since last tick in milliseconds
+  onTick?(world: any, x: number, y: number, deltaTime: number): void { }
+
   // Optional: Future properties
   // blastResistance?: number; // Resistance to explosions
   // lightLevel?: number; // Light emitted by the block

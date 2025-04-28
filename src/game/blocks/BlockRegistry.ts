@@ -17,7 +17,10 @@ import { Bedrock } from './30_Bedrock';
 import { Cactus } from './18_Cactus';
 import { LogSpruce } from './19_LogSpruce';
 import { LeavesSpruce } from './20_LeavesSpruce';
-import { Light } from './31_Light';
+import { Glowstone } from './31_Glowstone';
+import { Glass } from './21_Glass';
+import { Wool } from './32_Wool';
+
 /**
  * Registry to store and retrieve block types
  */
@@ -46,7 +49,9 @@ export class BlockRegistry {
       new Cactus(),
       new LogSpruce(),
       new LeavesSpruce(),
-      new Light(),
+      new Glowstone(),
+      new Glass(),
+      new Wool(),
     ].forEach((b: Block) => this.register(b));
   }
 

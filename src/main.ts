@@ -6,6 +6,7 @@ import { CameraController } from './game/controllers/CameraController';
 import { InputController } from './game/controllers/InputController';
 import { DebugInfo } from './game/utils/DebugInfo';
 import { Player } from './game/entities/Player';
+import { GameTick } from './game/systems/GameTick';
 
 // Initial buffer distance for world generation
 const WORLD_BUFFER = 5;
@@ -65,6 +66,10 @@ inputController.initialize(renderer.domElement);
 // Block renderer (rendered in front of background)
 const instRenderer = new InstancedRenderer(scene, maxTilesPerBlock);
 
+// Initialize game tick system with 1000ms tick rate (1 second)
+const gameTick = new GameTick(world, instRenderer, 1000);
+gameTick.start();
+
 // Create player at position (0, 30) - a bit above ground level to give time to fall
 const player = new Player(scene, 0, 10);
 
@@ -123,7 +128,7 @@ inputController.onHotbarScroll((direction) => {
   player.handleHotbarScroll(direction);
 });
 
-function animate() {
+function animate(timestamp: number) {
   requestAnimationFrame(animate);
 
   // Update input controller first
@@ -131,6 +136,9 @@ function animate() {
 
   // Update player physics and controls
   player.update(world, inputController.getKeys());
+
+  // Update game tick system
+  gameTick.update(timestamp);
 
   // Get player position for camera to follow
   const playerPos = player.getPosition();
@@ -193,7 +201,8 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-animate();
+// Start animation loop with timestamp
+animate(performance.now());
 
 // Handle window resize
 window.addEventListener('resize', () => {
