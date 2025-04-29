@@ -1,6 +1,4 @@
-import { Player } from '../entities/Player';
-import { World } from '../world/World';
-import { Block } from './Block';
+import { Block } from '../blocks/Block';
 
 export class Grass extends Block {
   readonly id = 2;

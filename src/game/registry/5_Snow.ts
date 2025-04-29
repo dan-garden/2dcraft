@@ -1,4 +1,4 @@
-import { Block } from './Block';
+import { Block } from '../blocks/Block';
 
 export class Snow extends Block {
   readonly id = 5;

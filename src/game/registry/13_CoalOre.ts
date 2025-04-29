@@ -1,4 +1,4 @@
-import { Block } from './Block';
+import { Block } from '../blocks/Block';
 
 export class CoalOre extends Block {
   readonly id = 13;

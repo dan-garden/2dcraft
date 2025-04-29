@@ -1,4 +1,4 @@
-import { Block } from './Block';
+import { Block } from '../blocks/Block';
 
 export class LeavesOak extends Block {
   readonly id = 12;

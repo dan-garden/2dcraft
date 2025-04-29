@@ -23,6 +23,9 @@ export abstract class Block {
   // Whether this block should be registered in the registry
   readonly shouldRegister: boolean = true;
 
+  // Whether this block has variants that need to be registered
+  readonly hasVariants: boolean = false;
+
   // Friction coefficient for movement (higher = more grip, lower = more slippery)
   // Default is 1.0 (normal friction)
   readonly friction: number = 1.0;

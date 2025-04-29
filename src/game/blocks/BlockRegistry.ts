@@ -1,25 +1,10 @@
 import { Block } from './Block';
-import { Air } from './0_Air';
-import { Dirt } from './1_Dirt';
-import { Grass } from './2_Grass';
-import { Stone } from './3_Stone';
-import { Sand } from './4_Sand';
-import { Snow } from './5_Snow';
-import { Clay } from './6_Clay';
-import { LogOak } from './11_LogOak';
-import { LeavesOak } from './12_LeavesOak';
-import { CoalOre } from './13_CoalOre';
-import { IronOre } from './14_IronOre';
-import { GoldOre } from './15_GoldOre';
-import { DiamondOre } from './16_DiamondOre';
-import { EmeraldOre } from './17_EmeraldOre';
-import { Bedrock } from './30_Bedrock';
-import { Cactus } from './18_Cactus';
-import { LogSpruce } from './19_LogSpruce';
-import { LeavesSpruce } from './20_LeavesSpruce';
-import { Glowstone } from './31_Glowstone';
-import { Glass } from './21_Glass';
-import { Wool } from './32_Wool';
+import { blockClasses } from '../registry/blockManifest';
+
+type BlockConstructor = new () => Block;
+type BlockWithVariants = BlockConstructor & {
+  getAllVariants: () => Block[];
+};
 
 /**
  * Registry to store and retrieve block types
@@ -30,37 +15,26 @@ export class BlockRegistry {
 
   // Private constructor for singleton pattern
   private constructor() {
-    // Register base blocks
-    [
-      new Air(),
-      new Dirt(),
-      new Grass(),
-      new Stone(),
-      new Sand(),
-      new Snow(),
-      new Clay(),
-      new LogOak(),
-      new LeavesOak(),
-      new CoalOre(),
-      new IronOre(),
-      new GoldOre(),
-      new DiamondOre(),
-      new EmeraldOre(),
-      new Bedrock(),
-      new Cactus(),
-      new LogSpruce(),
-      new LeavesSpruce(),
-      new Glowstone(),
-      new Glass(),
-      new Wool(),
-    ].forEach((b: Block) => {
-      if (b.shouldRegister) {
-        this.register(b);
-      }
-    });
+    this.registerBlocks();
+  }
 
-    // Register block variants
-    Wool.getAllVariants().forEach(variant => this.register(variant));
+  private registerBlocks() {
+    for (const blockClass of blockClasses) {
+      try {
+        const block = new blockClass();
+        if (block.shouldRegister) {
+          this.register(block);
+        }
+
+        // Register variants if the block has them
+        if (block.hasVariants && typeof (blockClass as BlockWithVariants).getAllVariants === 'function') {
+          const variants = (blockClass as BlockWithVariants).getAllVariants();
+          variants.forEach((variant: Block) => this.register(variant));
+        }
+      } catch (error) {
+        console.error(`Error registering block:`, error);
+      }
+    }
   }
 
   /**

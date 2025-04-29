@@ -1,5 +1,5 @@
-import { Block } from './Block';
-import { BlockVariant } from './BlockVariant';
+import { Block } from '../blocks/Block';
+import { BlockVariant } from '../blocks/BlockVariant';
 
 export class Wool extends Block {
   static readonly id = 32;
@@ -11,6 +11,7 @@ export class Wool extends Block {
   readonly texturePath = './assets/textures/wool_colored_black.png';
   readonly lightEmission = 12; // High light emission
   readonly shouldRegister = false; // Base wool block should not be registered
+  readonly hasVariants = true; // Wool has color variants
 
   // Define wool colors and their properties
   static readonly COLORS = [
