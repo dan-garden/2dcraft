@@ -21,6 +21,7 @@ export class Inventory {
 
   constructor() {
     this.createInventoryUI();
+    this.updateUI();
   }
 
   // Create the inventory UI container
