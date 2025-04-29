@@ -35,8 +35,6 @@ export class Player {
 
     // Initialize components
     this.inventory = new Inventory();
-    this.inventory.initializeWithBlocks(100);
-
     this.renderer = new PlayerRenderer(scene, this);
     this.physics = new PlayerPhysics(this);
   }
@@ -176,8 +174,8 @@ export class Player {
     return this.debugMode;
   }
 
-  public getInventory(): InventoryItem[] {
-    return this.inventory.getItems();
+  public getInventory(): Inventory {
+    return this.inventory;
   }
 
   public getSelectedBlock(): InventoryItem | null {

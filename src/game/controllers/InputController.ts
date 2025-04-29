@@ -28,6 +28,7 @@ type KeyAction =
   | 'jump'
   | 'toggleFly'
   | 'toggleBlockSelector'
+  | 'toggleInventory'
   | 'hotbar1'
   | 'hotbar2'
   | 'hotbar3'
@@ -66,6 +67,7 @@ export class InputController {
     ' ': 'jump',
     'f': 'toggleFly',
     'h': 'toggleBlockSelector',
+    'e': 'toggleInventory',
     '1': 'hotbar1',
     '2': 'hotbar2',
     '3': 'hotbar3',
@@ -187,6 +189,13 @@ export class InputController {
         case 'toggleBlockSelector':
           const isVisible = this.toggleBlockSelector();
           console.log(`Block selector ${isVisible ? 'visible' : 'hidden'}`);
+          break;
+
+        case 'toggleInventory':
+          if (this.player) {
+            const inventory = this.player.getInventory();
+            inventory.toggleInventory();
+          }
           break;
 
         // Hotbar selection
