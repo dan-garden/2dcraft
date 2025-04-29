@@ -24,6 +24,11 @@ export class Player {
   // Block interaction
   private readonly interactionDistance = 5;
 
+  // Block breaking state
+  private breakingBlock: { x: number, y: number } | null = null;
+  private lastBreakingTime: number = 0;
+  private readonly BREAKING_INTERVAL = 100; // ms between breaking progress updates
+
   constructor(scene: THREE.Scene, x: number, y: number) {
     this.position = new THREE.Vector2(x, y);
     this.velocity = new THREE.Vector2(0, 0);
@@ -45,6 +50,9 @@ export class Player {
 
     // Update physics
     this.physics.update(world, keys);
+
+    // Update block breaking progress
+    this.updateBlockBreaking(world);
 
     // Update renderer
     this.renderer.update();
@@ -71,6 +79,11 @@ export class Player {
 
     // Replace with air in the world (ID 0 is air)
     world.setBlockAt(x, y, 0);
+
+    // Call onAfterBreak after the block is broken
+    if (block.onAfterBreak) {
+      block.onAfterBreak(world, x, y, this);
+    }
   }
 
   private placeBlock(world: World, x: number, y: number): void {
@@ -206,27 +219,44 @@ export class Player {
     // Verify the block is within interaction range
     if (distance > this.interactionDistance * 1.5) return;
 
+    const block = world.getBlockAt(x, y);
+
     if (type === 'mine') {
-      // Get the block that will be mined
-      const block = world.getBlockAt(x, y);
+      // Don't mine air
+      if (block.id === 0) return;
 
       // Check if the block can be mined
       if (block.onBeforeBreak && !block.onBeforeBreak(world, x, y, this)) {
         return; // Block prevents being mined
       }
 
-      this.mineBlock(world, x, y);
+      // Start breaking the block
+      block.setBeingBroken(world, x, y, true);
+      this.breakingBlock = { x, y };
+      this.lastBreakingTime = performance.now();
 
-      // Call onAfterBreak if it exists
-      if (block.onAfterBreak) {
-        block.onAfterBreak(world, x, y, this);
+      // In debug mode, instantly break the block
+      if (this.debugMode) {
+        this.mineBlock(world, x, y);
+        block.resetBreakingState(world, x, y);
+        this.breakingBlock = null;
       }
     } else if (type === 'place') {
-      this.placeBlock(world, x, y);
-    } else if (type === 'rightClick') {
-      // Get the block that was right-clicked
-      const block = world.getBlockAt(x, y);
+      // Only place if current block is air
+      if (block.id !== 0) return;
 
+      // Check if we have any blocks in inventory
+      const selectedItem = this.inventory.getSelectedItem();
+      if (!selectedItem) return;
+
+      // Check if placing block would overlap with player
+      if (this.wouldBlockOverlapPlayer(x, y)) return;
+
+      world.setBlockAt(x, y, selectedItem.blockId);
+
+      // Remove from inventory
+      this.inventory.removeItem(selectedItem.blockId);
+    } else if (type === 'rightClick') {
       // Call the block's onRightClick method if it exists
       if (block.onRightClick) {
         block.onRightClick(world, x, y, this);
@@ -255,9 +285,76 @@ export class Player {
   public handleMouseHover(world: World, x: number, y: number): void {
     const block = world.getBlockAt(x, y);
 
+    // If we were breaking a different block, reset its breaking state
+    if (this.breakingBlock && (this.breakingBlock.x !== x || this.breakingBlock.y !== y)) {
+      const oldBlock = world.getBlockAt(this.breakingBlock.x, this.breakingBlock.y);
+      oldBlock.resetBreakingState(world, this.breakingBlock.x, this.breakingBlock.y);
+      this.breakingBlock = null;
+    }
+
     // Call onMouseHover if it exists
     if (block.onMouseHover) {
       block.onMouseHover(world, x, y, this);
+    }
+  }
+
+  private updateBlockBreaking(world: World): void {
+    if (!this.breakingBlock || !this.world) return;
+
+    const { x, y } = this.breakingBlock;
+    const block = world.getBlockAt(x, y);
+
+    // Skip if block is air or not being broken
+    if (block.id === 0 || !block.isBeingBroken(world, x, y)) return;
+
+    const currentTime = performance.now();
+    if (currentTime - this.lastBreakingTime < this.BREAKING_INTERVAL) return;
+
+    this.lastBreakingTime = currentTime;
+
+    // In debug mode, instantly break the block
+    if (this.debugMode) {
+      this.mineBlock(world, x, y);
+      block.resetBreakingState(world, x, y);
+      this.breakingBlock = null;
+      return;
+    }
+
+    // Get the selected tool (for now, just use the selected block)
+    const selectedTool = this.inventory.getSelectedItem();
+    const toolId = selectedTool ? selectedTool.blockId : null;
+
+    // Check if we have the required tool
+    const hasRequiredTool = block.requiredToolId === null || block.requiredToolId === toolId;
+    if (!hasRequiredTool) {
+      block.resetBreakingState(world, x, y);
+      this.breakingBlock = null;
+      return;
+    }
+
+    // Calculate breaking progress increment based on hardness
+    // Higher hardness = slower breaking
+    const progressIncrement = 0.1 / block.hardness;
+
+    // Update breaking progress
+    const newProgress = block.getBreakingProgress(world, x, y) + progressIncrement;
+    block.setBreakingProgress(world, x, y, newProgress);
+
+    // If progress reaches 100%, break the block
+    if (newProgress >= 1) {
+      this.mineBlock(world, x, y);
+      block.resetBreakingState(world, x, y);
+      this.breakingBlock = null;
+    }
+  }
+
+  // Add a method to stop breaking a block
+  public stopBreakingBlock(world: World): void {
+    if (this.breakingBlock) {
+      const { x, y } = this.breakingBlock;
+      const block = world.getBlockAt(x, y);
+      block.resetBreakingState(world, x, y);
+      this.breakingBlock = null;
     }
   }
 } 

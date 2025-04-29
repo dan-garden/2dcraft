@@ -9,4 +9,14 @@ export class Grass extends Block {
   readonly isSolid = true;
   readonly texturePath = './assets/textures/grass_top.png';
   readonly tinted = true; // Enable tinting for this block
+
+
+
+  onMouseHover(world: any, x: number, y: number, player: any): void {
+    console.log('onMouseHover', x, y);
+  }
+
+  onMouseLeave(world: any, x: number, y: number, player: any): void {
+    console.log('onMouseLeave', x, y);
+  }
 } 

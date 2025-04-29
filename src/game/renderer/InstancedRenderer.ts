@@ -20,6 +20,9 @@ export class InstancedRenderer {
   // Store reference to the current block textures for comparison
   private blockTexturePaths: Map<number, string> = new Map();
   private blockMaterials: Map<number, THREE.MeshStandardMaterial> = new Map();
+  private breakingStageTextures: THREE.Texture[] = [];
+  private breakingMaterial: THREE.MeshStandardMaterial;
+  private breakingMeshes: Map<string, THREE.InstancedMesh> = new Map(); // Key format: "x,y"
 
   // Lighting elements
   private ambientLight: THREE.AmbientLight;
@@ -41,6 +44,25 @@ export class InstancedRenderer {
   constructor(scene: THREE.Scene, maxInstancesPerBlock: number) {
     this.scene = scene;
     this.meshes = new Map<number, THREE.InstancedMesh>();
+    this.dummy = new THREE.Object3D();
+    this.renderBuffer = 5;
+
+    // Load breaking stage textures
+    this.loadBreakingStageTextures();
+
+    // Create a single breaking material that will be shared by all breaking meshes
+    this.breakingMaterial = new THREE.MeshStandardMaterial({
+      side: THREE.FrontSide,
+      transparent: true,
+      depthWrite: false,
+      depthTest: true,
+      metalness: 0.0,
+      roughness: 0.8,
+      flatShading: true,
+      blending: THREE.NormalBlending,
+      alphaTest: 0.1,
+      opacity: 1.0
+    });
 
     // Setup 2.5D lighting with brighter ambient (for surface illumination)
     this.ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Increased from 0.6 to 0.8
@@ -97,6 +119,18 @@ export class InstancedRenderer {
     });
   }
 
+  private loadBreakingStageTextures(): void {
+    const textureLoader = new THREE.TextureLoader();
+    for (let i = 0; i < 10; i++) {
+      const texture = textureLoader.load(`./assets/textures/destroy_stage_${i}.png`);
+      texture.magFilter = THREE.NearestFilter;
+      texture.minFilter = THREE.NearestFilter;
+      texture.generateMipmaps = false;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      this.breakingStageTextures.push(texture);
+    }
+  }
+
   /**
    * Creates a material for the given block
    */
@@ -134,10 +168,7 @@ export class InstancedRenderer {
     return new THREE.MeshStandardMaterial(matParams);
   }
 
-  /**
-   * Updates a block's material if its texture path has changed
-   */
-  private updateBlockMaterialIfNeeded(blockId: number): void {
+  private updateBlockMaterialIfNeeded(blockId: number, x: number, y: number, world: World): void {
     const registry = BlockRegistry.getInstance();
     const block = registry.getById(blockId);
 
@@ -172,6 +203,37 @@ export class InstancedRenderer {
         this.blockTexturePaths.set(blockId, newTexturePath);
       }
     }
+
+    // Update breaking stage if needed
+    const breakingStage = block.getBreakingStage(world, x, y);
+    const blockKey = `${x},${y}`;
+
+    if (breakingStage >= 0) {
+      let breakingMesh = this.breakingMeshes.get(blockKey);
+
+      if (!breakingMesh) {
+        // Create a new breaking mesh if it doesn't exist
+        const baseGeom = new THREE.BoxGeometry(1, 1, this.blockDepth);
+        breakingMesh = new THREE.InstancedMesh(baseGeom, this.breakingMaterial, 1);
+        breakingMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        breakingMesh.frustumCulled = false;
+        breakingMesh.renderOrder = 100;
+        this.scene.add(breakingMesh);
+        this.breakingMeshes.set(blockKey, breakingMesh);
+      }
+
+      // Update the breaking stage texture
+      this.breakingMaterial.map = this.breakingStageTextures[breakingStage];
+      this.breakingMaterial.needsUpdate = true;
+    } else {
+      // Remove breaking mesh if not being broken
+      const breakingMesh = this.breakingMeshes.get(blockKey);
+      if (breakingMesh) {
+        this.scene.remove(breakingMesh);
+        breakingMesh.dispose();
+        this.breakingMeshes.delete(blockKey);
+      }
+    }
   }
 
   private getViewSize(camera: THREE.Camera): { width: number, height: number } {
@@ -195,11 +257,11 @@ export class InstancedRenderer {
     }
   }
 
-  private renderBlock(x: number, y: number, blockId: number, cameraPosition: THREE.Vector2): void {
+  private renderBlock(x: number, y: number, blockId: number, cameraPosition: THREE.Vector2, world: World): void {
     if (blockId === 0) return; // Skip air blocks
 
     // Check if the block's texture needs updating
-    this.updateBlockMaterialIfNeeded(blockId);
+    this.updateBlockMaterialIfNeeded(blockId, x, y, world);
 
     const mesh = this.meshes.get(blockId);
     if (!mesh || mesh.count >= mesh.instanceMatrix.count) return;
@@ -217,11 +279,25 @@ export class InstancedRenderer {
     // Set the matrix for this instance
     mesh.setMatrixAt(instanceIdx, this.dummy.matrix);
 
-    // Check if this is a light-emitting block
-    const registry = BlockRegistry.getInstance();
-    const block = registry.getById(blockId);
+    // Check if this specific block in the world is being broken
+    const block = world.getBlockAt(x, y);
+    const breakingStage = block.getBreakingStage(world, x, y);
 
-    // Queue up light-emitting blocks instead of creating lights immediately
+    if (breakingStage >= 0) {
+      const blockKey = `${x},${y}`;
+      const breakingMesh = this.breakingMeshes.get(blockKey);
+      if (breakingMesh) {
+        // Create a new dummy for the breaking mesh to avoid affecting the block's position
+        const breakingDummy = new THREE.Object3D();
+        breakingDummy.position.set(x + 0.5, y + 0.5, zPos + 0.1);
+        breakingDummy.rotation.set(0, 0, 0);
+        breakingDummy.updateMatrix();
+        breakingMesh.setMatrixAt(0, breakingDummy.matrix); // Always use index 0 since we only have 1 instance
+        breakingMesh.count = 1;
+      }
+    }
+
+    // Check if this is a light-emitting block
     if (block.lightEmission > 0) {
       const blockKey = `${x},${y}`;
 
@@ -337,6 +413,7 @@ export class InstancedRenderer {
 
     // Reset all mesh counts
     this.meshes.forEach(mesh => (mesh.count = 0));
+    this.breakingMeshes.forEach(mesh => (mesh.count = 0));
 
     // Clear visible blocks list
     this.visibleBlocks = [];
@@ -360,7 +437,7 @@ export class InstancedRenderer {
       // Skip blocks outside render area
       if (x < startX || x > endX || y < startY || y > endY) return;
 
-      this.renderBlock(x, y, blockId, cameraPosition);
+      this.renderBlock(x, y, blockId, cameraPosition, world);
 
       // Add to visible blocks
       this.visibleBlocks.push({ x, y, blockId });
@@ -375,7 +452,7 @@ export class InstancedRenderer {
         if (modifiedBlocks.has(blockKey)) continue;
 
         const block = world.getBlockAt(x, y);
-        this.renderBlock(x, y, block.id, cameraPosition);
+        this.renderBlock(x, y, block.id, cameraPosition, world);
 
         // Add to visible blocks
         this.visibleBlocks.push({ x, y, blockId: block.id });
@@ -392,6 +469,13 @@ export class InstancedRenderer {
 
     // Update instance matrices for all meshes with instances
     this.meshes.forEach(mesh => {
+      if (mesh.count > 0) {
+        mesh.instanceMatrix.needsUpdate = true;
+      }
+    });
+
+    // Update instance matrices for breaking meshes
+    this.breakingMeshes.forEach(mesh => {
       if (mesh.count > 0) {
         mesh.instanceMatrix.needsUpdate = true;
       }

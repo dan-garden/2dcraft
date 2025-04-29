@@ -14,6 +14,7 @@ export class World {
   };
   private chunks = new Map<string, Chunk>();
   private modifiedBlocks = new Map<string, number>(); // Only store modified blocks
+  private breakingStates = new Map<string, { progress: number, isBeingBroken: boolean }>(); // Store breaking state per position
   private readonly WORLD_HEIGHT = 256;
   private readonly WORLD_BOTTOM = -120; // Bottom limit where bedrock starts
   private readonly CHUNK_RENDER_DISTANCE = 3; // Number of chunks in each direction
@@ -330,5 +331,24 @@ export class World {
     if (!this.modifiedBlocks.has(key)) {
       this.modifiedBlocks.set(key, blockId);
     }
+  }
+
+  public getBlockBreakingState(x: number, y: number): { progress: number, isBeingBroken: boolean } {
+    const key = this.blockKey(x, y);
+    return this.breakingStates.get(key) || { progress: 0, isBeingBroken: false };
+  }
+
+  public setBlockBreakingState(x: number, y: number, progress: number, isBeingBroken: boolean): void {
+    const key = this.blockKey(x, y);
+    if (progress === 0 && !isBeingBroken) {
+      this.breakingStates.delete(key);
+    } else {
+      this.breakingStates.set(key, { progress, isBeingBroken });
+    }
+  }
+
+  public resetBlockBreakingState(x: number, y: number): void {
+    const key = this.blockKey(x, y);
+    this.breakingStates.delete(key);
   }
 }
