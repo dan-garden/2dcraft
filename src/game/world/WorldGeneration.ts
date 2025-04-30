@@ -149,13 +149,21 @@ export function generateChunk(
   }
 
   // Second pass: Generate ores
-  // Check for ore generation at evenly spaced intervals to improve performance
-  const ORE_CHECK_INTERVAL = 4;
+  // Check for ore generation with a more natural, randomized pattern
+  const ORE_CHECK_INTERVAL = 2; // Reduced for more samples
 
+  // Add variation to interval to break up the grid pattern
   for (let localX = 0; localX < chunkWidth; localX += ORE_CHECK_INTERVAL) {
-    for (let localY = 0; localY < chunkHeight; localY += ORE_CHECK_INTERVAL) {
-      const worldX = chunkX * chunkWidth + localX;
-      const worldY = chunkY * chunkHeight + localY;
+    // Use noise to add variation to the y-interval to break the grid pattern
+    const yNoiseOffset = Math.floor(worldGenerator.createNoiseFunction('ore_grid', 0.3)(chunkX * chunkWidth + localX, 0) * ORE_CHECK_INTERVAL);
+
+    for (let localY = yNoiseOffset % ORE_CHECK_INTERVAL; localY < chunkHeight; localY += ORE_CHECK_INTERVAL) {
+      // Add slight position jitter based on noise to break the grid pattern
+      const jitterX = Math.floor(worldGenerator.createNoiseFunction('ore_jitter_x', 0.8)(localX, localY) * 3) - 1;
+      const jitterY = Math.floor(worldGenerator.createNoiseFunction('ore_jitter_y', 0.8)(localX, localY) * 3) - 1;
+
+      const worldX = chunkX * chunkWidth + localX + jitterX;
+      const worldY = chunkY * chunkHeight + localY + jitterY;
 
       // Get the biome at this position
       const biome = biomeManager.getBiomeAt(worldX, 0);

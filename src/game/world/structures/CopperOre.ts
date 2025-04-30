@@ -11,7 +11,7 @@ export class CopperOre extends OreVein {
       maxVeinSize: 10,
       minY: -80,
       maxY: 48,
-      minSpaceBetween: 8,
+      minSpaceBetween: 0,
       inBlock: 'stone',
       validBiomes: [],
       biomeManager: biomeManager

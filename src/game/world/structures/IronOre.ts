@@ -11,7 +11,7 @@ export class IronOre extends OreVein {
       maxVeinSize: 12,
       minY: -128,
       maxY: 256,
-      minSpaceBetween: 8,
+      minSpaceBetween: 0,
       inBlock: 'stone',
       validBiomes: [], // Empty array, let OreVein constructor handle it
       biomeManager: biomeManager

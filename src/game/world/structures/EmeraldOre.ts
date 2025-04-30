@@ -11,7 +11,7 @@ export class EmeraldOre extends OreVein {
       maxVeinSize: 1,
       minY: -80,
       maxY: 256,
-      minSpaceBetween: 24,
+      minSpaceBetween: 0,
       inBlock: 'stone',
       validBiomes: [],
       biomeManager: biomeManager

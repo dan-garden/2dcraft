@@ -11,7 +11,7 @@ export class CoalOre extends OreVein {
       maxVeinSize: 15,
       minY: -120,
       maxY: 128,
-      minSpaceBetween: 6,
+      minSpaceBetween: 0,
       inBlock: 'stone',
       validBiomes: [],
       biomeManager: biomeManager

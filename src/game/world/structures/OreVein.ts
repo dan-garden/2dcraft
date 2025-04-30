@@ -83,15 +83,22 @@ export class OreVein extends BaseStructure {
     const oreVeins = OreVein.veinCache.get(this.id) || [];
     const tooCloseToExistingVein = oreVeins.some(vein => {
       const distance = Math.sqrt(Math.pow(x - vein.x, 2) + Math.pow(y - vein.y, 2));
-      return distance < this.minSpaceBetween + vein.radius;
+      // Add small randomness to distance check to create less regular spacing
+      const randomSpaceFactor = 0.8 + (this.shapeNoise(x / 10, y / 10) * 0.4);
+      return distance < (this.minSpaceBetween + vein.radius) * randomSpaceFactor;
     });
 
     if (tooCloseToExistingVein) {
       return false;
     }
 
-    // Use the noise function to determine if an ore should generate based on rarity
-    return noiseFn(x) <= this.rarity;
+    // Add more randomness to the ore placement to avoid grid patterns
+    // This varies the rarity threshold by position instead of using the same threshold everywhere
+    const positionVariance = (this.spreadNoise(x / 25, y / 25) + 1) / 2 * 0.3;
+    const effectiveRarity = this.rarity * (0.85 + positionVariance);
+
+    // Use the noise function to determine if an ore should generate based on adjusted rarity
+    return noiseFn(x) <= effectiveRarity;
   }
 
   override generateAt(

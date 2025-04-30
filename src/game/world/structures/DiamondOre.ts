@@ -10,8 +10,8 @@ export class DiamondOre extends OreVein {
       minVeinSize: 1,
       maxVeinSize: 8,
       minY: -128,
-      maxY: -48,
-      minSpaceBetween: 16,
+      maxY: -70,
+      minSpaceBetween: 0,
       inBlock: 'stone',
       validBiomes: [],
       biomeManager: biomeManager

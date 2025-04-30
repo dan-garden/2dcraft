@@ -119,14 +119,26 @@ export class StructureManager {
    * Check if an ore vein should be generated at the given position
    */
   getOreAt(x: number, y: number, biomeId: string): OreVein | null {
+    // Add randomness to position check to break up grid patterns
+    // Only process ~70% of positions to create more natural distribution
+    const positionCheckNoise = this.oreNoise(x / 5, y / 5);
+    if (positionCheckNoise > 0.7) {
+      return null;
+    }
+
     for (const structure of this.structures) {
       // Only process ore veins
       if (!(structure instanceof OreVein)) continue;
 
-      // Create a noise-based check function for this position
+      // Create a more complex noise-based check function for this position
+      // that varies with both x and y coordinates
       const oreCheckNoise = (xPos: number) => {
-        // Use the coords to create a positional seed
-        return this.structureNoise(x + y * 100 + xPos);
+        // Create a mixed noise using both coordinates and the ore position
+        const noise1 = this.structureNoise(x + y * 100 + xPos);
+        const noise2 = this.oreNoise(x / 20, y / 20);
+
+        // Mix the noises to break the regularity
+        return (noise1 * 0.7 + noise2 * 0.3);
       };
 
       // Check if this ore can generate here

@@ -11,7 +11,7 @@ export class GoldOre extends OreVein {
       maxVeinSize: 9,
       minY: -128,
       maxY: -32,
-      minSpaceBetween: 10,
+      minSpaceBetween: 0,
       inBlock: 'stone',
       validBiomes: [],
       biomeManager: biomeManager

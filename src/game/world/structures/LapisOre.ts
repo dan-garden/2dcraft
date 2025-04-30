@@ -10,8 +10,8 @@ export class LapisOre extends OreVein {
       minVeinSize: 2,
       maxVeinSize: 6,
       minY: -128,
-      maxY: 0,
-      minSpaceBetween: 12,
+      maxY: -48,
+      minSpaceBetween: 0,
       inBlock: 'stone',
       validBiomes: [],
       biomeManager: biomeManager
