@@ -12,7 +12,6 @@
   "packageManager": "pnpm@10.9.0",
   "dependencies": {
     "alea": "^1.0.1",
-    "minecraft-assets": "^1.15.0",
     "simplex-noise": "^4.0.3",
     "three": "^0.176.0",
     "tsx": "^4.19.4"

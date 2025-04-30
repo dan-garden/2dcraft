@@ -686,6 +686,37 @@ export class InputController {
   }
 
   /**
+   * Recalculate the hover position based on current screen mouse position
+   */
+  private recalculateHoverPosition() {
+    if (!this.cameraController || !this.world) return;
+
+    // Use raycasting for 2.5D mode
+    const raycaster = new THREE.Raycaster();
+    const camera = this.cameraController['camera']; // Access the camera from controller
+
+    // Set up raycaster from camera through mouse point
+    raycaster.setFromCamera(
+      new THREE.Vector2(this.screenMousePosition.x, this.screenMousePosition.y),
+      camera
+    );
+
+    // Raycast to find intersection with game world
+    const intersection = this.calculateRayIntersection(raycaster);
+
+    if (intersection) {
+      this.mousePosition.x = intersection.x;
+      this.mousePosition.y = intersection.y;
+      this.updateHoverBlock();
+
+      // Process drag interactions if mouse button is held down
+      if (this.mouseState.left || this.mouseState.right) {
+        this.processDragInteraction();
+      }
+    }
+  }
+
+  /**
    * Update input state - call this every frame
    */
   update() {
@@ -698,6 +729,9 @@ export class InputController {
     // Update last mouse state
     this.lastMouseState.left = this.mouseState.left;
     this.lastMouseState.right = this.mouseState.right;
+
+    // Recalculate hover position every frame to account for camera movement
+    this.recalculateHoverPosition();
   }
 
   /**

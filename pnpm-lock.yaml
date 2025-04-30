@@ -11,9 +11,6 @@ importers:
       alea:
         specifier: ^1.0.1
         version: 1.0.1
-      minecraft-assets:
-        specifier: ^1.15.0
-        version: 1.15.0
       simplex-noise:
         specifier: ^4.0.3
         version: 4.0.3
@@ -343,9 +340,6 @@ packages:
   meshoptimizer@0.18.1:
     resolution: {integrity: sha512-ZhoIoL7TNV4s5B6+rx5mC//fw8/POGyNxS/DZyCJeiZ12ScLfVwRE/GfsxwiTkMYYD5DmK2/JXnEVXqL4rF+Sw==}
 
-  minecraft-assets@1.15.0:
-    resolution: {integrity: sha512-hHHNyzrUUaCDEVdupvgnu8hM5y/6t6R8V2m9LgkFRlz0XENII2uDevO5pXkLlz80K0SazHWzd8+zcHitmt6c0Q==}
-
   nanoid@3.3.11:
     resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -644,8 +638,6 @@ snapshots:
       resolve-pkg-maps: 1.0.0
 
   meshoptimizer@0.18.1: {}
-
-  minecraft-assets@1.15.0: {}
 
   nanoid@3.3.11: {}
 
