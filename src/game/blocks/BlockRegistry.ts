@@ -1,5 +1,5 @@
 import { Block } from './Block';
-import { blockClasses } from '../registry/blockManifest';
+import { blockClasses } from '../registry/blocks/blockManifest';
 
 type BlockConstructor = new () => Block;
 type BlockWithVariants = BlockConstructor & {
