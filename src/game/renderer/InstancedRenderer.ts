@@ -7,19 +7,19 @@ import { CameraController } from '../controllers/CameraController';
 export interface VisibleBlock {
   x: number;
   y: number;
-  blockId: number;
+  blockId: string;
 }
 
 export class InstancedRenderer {
   private scene: THREE.Scene;
-  private meshes: Map<number, THREE.InstancedMesh>;
+  private meshes: Map<string, THREE.InstancedMesh>;
   private dummy = new THREE.Object3D();
   private renderBuffer = 5; // How many blocks beyond viewport to render
   private visibleBlocks: VisibleBlock[] = [];
 
   // Store reference to the current block textures for comparison
-  private blockTexturePaths: Map<number, string> = new Map();
-  private blockMaterials: Map<number, THREE.MeshStandardMaterial> = new Map();
+  private blockTexturePaths: Map<string, string> = new Map();
+  private blockMaterials: Map<string, THREE.MeshStandardMaterial> = new Map();
   private breakingStageTextures: THREE.Texture[] = [];
   private breakingMaterial: THREE.MeshStandardMaterial;
   private breakingMeshes: Map<string, THREE.InstancedMesh> = new Map(); // Key format: "x,y"
@@ -43,7 +43,7 @@ export class InstancedRenderer {
 
   constructor(scene: THREE.Scene, maxInstancesPerBlock: number) {
     this.scene = scene;
-    this.meshes = new Map<number, THREE.InstancedMesh>();
+    this.meshes = new Map<string, THREE.InstancedMesh>();
     this.dummy = new THREE.Object3D();
     this.renderBuffer = 5;
 
@@ -96,9 +96,23 @@ export class InstancedRenderer {
     const blocks = registry.all();
     const baseGeom = new THREE.BoxGeometry(1, 1, this.blockDepth);
 
+    console.log(`Initializing ${blocks.length} block meshes`);
+    const registeredIds = new Set<string>();
+
     blocks.forEach(block => {
       // Skip creating meshes for air blocks
-      if (block.id === 0) return;
+      if (block.id === 'air') return;
+
+      // Check for duplicate or empty IDs
+      if (block.id === '') {
+        console.warn(`Block has empty ID: ${block.name}`);
+        return;
+      }
+
+      if (registeredIds.has(block.id)) {
+        console.warn(`Duplicate block ID found: ${block.id} (${block.name})`);
+      }
+      registeredIds.add(block.id);
 
       // Create material and store it
       const material = this.createMaterialForBlock(block);
@@ -117,6 +131,10 @@ export class InstancedRenderer {
       this.scene.add(mesh);
       this.meshes.set(block.id, mesh);
     });
+
+    // Log all registered block IDs
+    console.log(`Registered block IDs: ${Array.from(registeredIds).join(', ')}`);
+    console.log(`Total blocks registered: ${registeredIds.size}`);
   }
 
   private loadBreakingStageTextures(): void {
@@ -168,12 +186,12 @@ export class InstancedRenderer {
     return new THREE.MeshStandardMaterial(matParams);
   }
 
-  private updateBlockMaterialIfNeeded(blockId: number, x: number, y: number, world: World): void {
+  private updateBlockMaterialIfNeeded(blockId: string, x: number, y: number, world: World): void {
     const registry = BlockRegistry.getInstance();
     const block = registry.getById(blockId);
 
     // Skip air blocks
-    if (blockId === 0) return;
+    if (blockId === 'air') return;
 
     // Check if texture path has changed
     const currentTexturePath = this.blockTexturePaths.get(blockId) || '';
@@ -257,14 +275,18 @@ export class InstancedRenderer {
     }
   }
 
-  private renderBlock(x: number, y: number, blockId: number, cameraPosition: THREE.Vector2, world: World): void {
-    if (blockId === 0) return; // Skip air blocks
+  private renderBlock(x: number, y: number, blockId: string, cameraPosition: THREE.Vector2, world: World): void {
+    if (blockId === 'air') return; // Skip air blocks
 
     // Check if the block's texture needs updating
     this.updateBlockMaterialIfNeeded(blockId, x, y, world);
 
     const mesh = this.meshes.get(blockId);
-    if (!mesh || mesh.count >= mesh.instanceMatrix.count) return;
+    if (!mesh) {
+      console.error(`Missing mesh for block ID: ${blockId} at position (${x}, ${y})`);
+      return;
+    }
+    if (mesh.count >= mesh.instanceMatrix.count) return;
 
     // Z-position calculation for proper layering and parallax effect
     const zPos = -y * this.layerStep - (0.0001 * x);

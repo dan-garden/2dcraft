@@ -11,7 +11,7 @@ type BlockWithVariants = BlockConstructor & {
  */
 export class BlockRegistry {
   private static instance: BlockRegistry;
-  private blocks = new Map<number, Block>();
+  private blocks = new Map<string, Block>();
 
   // Private constructor for singleton pattern
   private constructor() {
@@ -57,8 +57,8 @@ export class BlockRegistry {
     this.blocks.set(block.id, block);
   }
 
-  public getById(id: number): Block {
-    return this.blocks.get(id) ?? this.blocks.get(0)!;
+  public getById(id: string): Block {
+    return this.blocks.get(id) ?? this.blocks.get('air')!;
   }
 
   public all(): Block[] {

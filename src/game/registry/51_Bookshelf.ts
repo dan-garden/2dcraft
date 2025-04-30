@@ -1,7 +1,7 @@
 import { Block } from '../blocks/Block';
 
 export class Bookshelf extends Block {
-  readonly id = 51;
+  readonly id = 'bookshelf';
   readonly name = 'Bookshelf';
   readonly color = 0x777777;
   readonly isSolid = true;

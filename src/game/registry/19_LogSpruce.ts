@@ -1,7 +1,7 @@
 import { Block } from '../blocks/Block';
 
 export class LogSpruce extends Block {
-  readonly id = 19;
+  readonly id = 'log_spruce';
   readonly name = 'Spruce Log';
   readonly color = 0x777777; // Brown
   readonly isSolid = true;

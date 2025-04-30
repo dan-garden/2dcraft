@@ -362,7 +362,7 @@ export class InputController {
     if (this.mouseState.left) {
       // Breaking blocks while dragging (left mouse button)
       const block = this.world?.getBlockAt(this.hoverBlock.x, this.hoverBlock.y);
-      if (block && block.id !== 0) { // Don't mine air
+      if (block && block.id !== 'air') { // Don't mine air
         this.blockInteractionCallbacks.forEach(callback => {
           callback({
             type: 'mine',
@@ -378,7 +378,7 @@ export class InputController {
     else if (this.mouseState.right) {
       // Placing blocks while dragging (right mouse button)
       const block = this.world?.getBlockAt(this.hoverBlock.x, this.hoverBlock.y);
-      if (block && block.id === 0) { // Only place on air
+      if (block && block.id === 'air') { // Only place on air
         this.blockInteractionCallbacks.forEach(callback => {
           callback({
             type: 'place',
@@ -566,7 +566,7 @@ export class InputController {
 
     // Left click = mine (only if state changed)
     if (this.mouseState.left && !this.lastMouseState.left) {
-      if (block.id !== 0) { // Don't mine air
+      if (block.id !== 'air') { // Don't mine air
         this.player.handleBlockInteraction('mine', x, y, this.world);
         this.lastInteractedBlock = { x, y };
       }
@@ -574,7 +574,7 @@ export class InputController {
 
     // Right click = place or interact (only if state changed)
     if (this.mouseState.right && !this.lastMouseState.right) {
-      if (block.id === 0) { // Only place on air
+      if (block.id === 'air') { // Only place on air
         this.player.handleBlockInteraction('place', x, y, this.world);
         this.lastInteractedBlock = { x, y };
       } else {

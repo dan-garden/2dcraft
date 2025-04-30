@@ -1,7 +1,7 @@
 import { Block } from '../blocks/Block';
 
 export class LogOak extends Block {
-  readonly id = 11;
+  readonly id = 'log_oak';
   readonly name = 'Oak Log';
   readonly color = 0x777777; // Brown
   readonly isSolid = true;

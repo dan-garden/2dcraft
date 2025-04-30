@@ -3,7 +3,7 @@ import { Chunk } from '../world/Chunk';
 
 // Interface for inventory item to align with Player's implementation
 interface InventoryItem {
-  blockId: number;
+  blockId: string;
   count: number;
 }
 

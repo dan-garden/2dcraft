@@ -13,7 +13,7 @@ export class World {
     structureGenerator: StructureGenerator;
   };
   private chunks = new Map<string, Chunk>();
-  private modifiedBlocks = new Map<string, number>(); // Only store modified blocks
+  private modifiedBlocks = new Map<string, string>(); // Only store modified blocks
   private breakingStates = new Map<string, { progress: number, isBeingBroken: boolean }>(); // Store breaking state per position
   private readonly WORLD_HEIGHT = 256;
   private readonly WORLD_BOTTOM = -120; // Bottom limit where bedrock starts
@@ -148,7 +148,7 @@ export class World {
       if (this.debugMode) {
         // console.log(`Block at (${x}, ${y}) is above world height, returning air`);
       }
-      return blockRegistry.getById(0);
+      return blockRegistry.getById('air');
     }
 
     // Return bedrock if below world bottom
@@ -156,7 +156,7 @@ export class World {
       if (this.debugMode) {
         // console.log(`Block at (${x}, ${y}) is below world bottom, returning bedrock`);
       }
-      return blockRegistry.getById(30); // Bedrock
+      return blockRegistry.getById('bedrock'); // Bedrock
     }
 
     // Get the block from the correct chunk
@@ -171,11 +171,11 @@ export class World {
     return blockRegistry.getById(blockId);
   }
 
-  public setBlockAt(x: number, y: number, blockId: number) {
+  public setBlockAt(x: number, y: number, blockId: string) {
     const blockKey = this.blockKey(x, y);
 
     // Get existing block ID for logging
-    let existingBlockId = -1;
+    let existingBlockId = '';
     if (this.modifiedBlocks.has(blockKey)) {
       existingBlockId = this.modifiedBlocks.get(blockKey)!;
     } else {
@@ -210,7 +210,7 @@ export class World {
     }
   }
 
-  public getModifiedBlocks(): Map<string, number> {
+  public getModifiedBlocks(): Map<string, string> {
     return this.modifiedBlocks;
   }
 
@@ -319,7 +319,7 @@ export class World {
 
     // Get the block at this position
     const blockId = this.getBlockAt(x, y).id;
-    if (blockId === 0) return; // Don't update air blocks
+    if (blockId === 'air') return; // Don't update air blocks
 
     // For now, just record that this block's light has changed
     // In a more complete implementation, you would update the block's

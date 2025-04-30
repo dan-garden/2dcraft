@@ -3,7 +3,7 @@ import { BlockRegistry } from '../blocks/BlockRegistry';
 
 // Interface for inventory item
 export interface InventoryItem {
-  blockId: number;
+  blockId: string;
   count: number;
 }
 
@@ -436,7 +436,7 @@ export class Inventory {
   }
 
   // Add item to inventory
-  public addItem(blockId: number): void {
+  public addItem(blockId: string): void {
     // First try to add to existing stack in hotbar
     for (let i = 0; i < this.hotbar.length; i++) {
       const item = this.hotbar[i];
@@ -477,7 +477,7 @@ export class Inventory {
   }
 
   // Remove item from inventory
-  public removeItem(blockId: number): void {
+  public removeItem(blockId: string): void {
     // First try to remove from hotbar
     for (let i = 0; i < this.hotbar.length; i++) {
       const item = this.hotbar[i];

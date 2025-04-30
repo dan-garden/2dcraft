@@ -1,6 +1,6 @@
 export abstract class Block {
   // Unique identifier for the block
-  abstract readonly id: number;
+  abstract readonly id: string;
 
   // Human-readable name of the block
   abstract readonly name: string;
@@ -35,7 +35,7 @@ export abstract class Block {
   readonly hardness: number = 1.0;
 
   // The tool required to break the block
-  readonly requiredToolId: number | null = null;
+  readonly requiredToolId: string | null = null;
 
   // Light emission level (0-15, where 0 is no light and 15 is maximum brightness)
   readonly lightEmission: number = 0;

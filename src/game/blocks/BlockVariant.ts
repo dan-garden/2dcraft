@@ -1,15 +1,15 @@
 import { Block } from './Block';
 
 export class BlockVariant extends Block {
-  private baseId: number;
-  private variantId: number;
+  private baseId: string;
+  private variantId: string;
   private variantName: string;
   private variantColor: number;
   private variantTexturePath: string;
 
   constructor(
     baseBlock: Block,
-    variantId: number,
+    variantId: string,
     variantName: string,
     variantColor: number,
     variantTexturePath: string
@@ -22,7 +22,7 @@ export class BlockVariant extends Block {
     this.variantTexturePath = variantTexturePath;
   }
 
-  get id(): number {
+  get id(): string {
     return this.variantId;
   }
 

@@ -2,7 +2,7 @@ import { createNoise2D } from 'simplex-noise';
 import alea from 'alea';
 
 export interface OreSettings {
-  id: number;
+  id: string;
   minVeinSize: number;
   maxVeinSize: number;
   rarity: number;
@@ -11,7 +11,7 @@ export interface OreSettings {
 }
 
 export interface BlockGenerationRule {
-  id: number;
+  id: string;
   name: string;
   priority: number; // Higher priority rules are evaluated first
   condition: (x: number, y: number, generator: WorldGenerator) => boolean;
@@ -25,9 +25,9 @@ export class WorldGenerator {
   private ores: OreSettings[] = [];
   private generationRules: BlockGenerationRule[] = [];
   private seed: string;
-  
+
   // This property can be set by biome generators to dynamically change the block ID
-  public currentBlockId: number = -1;
+  public currentBlockId: string = '';
   // Optional reference to a biome generator for height modifications
   private biomeGenerator: { modifyHeight: (x: number, baseHeight: number) => number } | null = null;
 
@@ -38,11 +38,11 @@ export class WorldGenerator {
     this.noise2 = createNoise2D(alea(seed + '2'));
     this.noise3 = createNoise2D(alea(seed + '3'));
     this.oreNoise = createNoise2D(alea(seed + 'ores'));
-    
+
     // Register default generation rules
     this.registerDefaultRules();
   }
-  
+
   // Set the biome generator for this world
   setBiomeGenerator(biomeGenerator: { modifyHeight: (x: number, baseHeight: number) => number }): void {
     this.biomeGenerator = biomeGenerator;
@@ -51,7 +51,7 @@ export class WorldGenerator {
   private registerDefaultRules(): void {
     // Air rule
     this.registerGenerationRule({
-      id: 0,
+      id: 'air',
       name: 'air',
       priority: 100,
       condition: (x, y, generator) => y > generator.getHeightAt(x)
@@ -59,7 +59,7 @@ export class WorldGenerator {
 
     // Grass rule (surface only)
     this.registerGenerationRule({
-      id: 2,
+      id: 'grass',
       name: 'grass',
       priority: 90,
       condition: (x, y, generator) => {
@@ -70,7 +70,7 @@ export class WorldGenerator {
 
     // Dirt rule (few blocks below surface)
     this.registerGenerationRule({
-      id: 1,
+      id: 'dirt',
       name: 'dirt',
       priority: 80,
       condition: (x, y, generator) => {
@@ -81,7 +81,7 @@ export class WorldGenerator {
 
     // Dirt patches in stone
     this.registerGenerationRule({
-      id: 1,
+      id: 'dirt',
       name: 'dirt_patches',
       priority: 60,
       condition: (x, y, generator) => {
@@ -92,7 +92,7 @@ export class WorldGenerator {
 
     // Stone is the default block, will be used if no other rules match
     this.registerGenerationRule({
-      id: 3,
+      id: 'stone',
       name: 'stone',
       priority: 0, // Lowest priority as it's the default
       condition: () => true
@@ -101,7 +101,7 @@ export class WorldGenerator {
 
   registerOre(ore: OreSettings): void {
     this.ores.push(ore);
-    
+
     // Register a generation rule for this ore
     this.registerGenerationRule({
       id: ore.id,
@@ -122,48 +122,48 @@ export class WorldGenerator {
     const baseNoise = this.noise(x / 50, 0 / 50) * 0.5;
     const detailNoise = this.noise2(x / 20, 0 / 20) * 0.3;
     const fineNoise = this.noise3(x / 10, 0 / 10) * 0.2;
-    
+
     // Combine noise functions for more interesting terrain
     const baseHeight = (baseNoise + detailNoise + fineNoise) * 20;
-    
+
     // Check for NaN before biome modification
     if (isNaN(baseHeight)) {
       console.error(`NaN detected in WorldGenerator.getHeightAt: baseHeight=${baseHeight}, x=${x}`);
       console.error(`  noise values: baseNoise=${baseNoise}, detailNoise=${detailNoise}, fineNoise=${fineNoise}`);
       return 0; // Return a safe default height to prevent issues
     }
-    
+
     // Apply biome-specific height modifications if a biome generator is set
     if (this.biomeGenerator) {
       const modifiedHeight = this.biomeGenerator.modifyHeight(x, baseHeight);
-      
+
       // Check for NaN after biome modification
       if (isNaN(modifiedHeight)) {
         console.error(`NaN detected after biome.modifyHeight: baseHeight=${baseHeight}, modifiedHeight=${modifiedHeight}, x=${x}`);
         return baseHeight; // Fall back to unmodified height
       }
-      
+
       return modifiedHeight;
     }
-    
+
     return baseHeight;
   }
 
-  getTile(x: number, y: number): number {
+  getTile(x: number, y: number): string {
     // Apply the first matching generation rule
     for (const rule of this.generationRules) {
       // Reset the current block ID before checking each rule
       this.currentBlockId = rule.id;
-      
+
       if (rule.condition(x, y, this)) {
         // If the rule condition is true, return either the rule's ID
         // or the dynamically set currentBlockId (if it was changed by the rule)
         return this.currentBlockId;
       }
     }
-    
+
     // Default fallback (though we should never reach here due to the default stone rule)
-    return 3;
+    return 'stone';
   }
 
   private checkOreGeneration(x: number, y: number, ore: OreSettings): boolean {
@@ -174,52 +174,53 @@ export class WorldGenerator {
       if (this.isNearAir(x, y)) {
         return false;
       }
-      
+
       // Use noise to determine if this should be an ore vein
       const oreNoise = this.oreNoise(x / 20, y / 20); // Increased scale from 10 to 20 for larger ore patches
-      
+
       // Calculate a unique seed for this ore type for more varied distribution
-      const oreSeed = (ore.id * 1000) % 2477;
-      const oreTypeNoise = this.oreNoise((x + oreSeed) / 30, (y + oreSeed) / 30); // Increased scale
-      
+      // Use a simple hash function to convert ore.id (string) to a number
+      const oreSeedValue = this.hashStringToNumber(ore.id);
+      const oreTypeNoise = this.oreNoise((x + oreSeedValue) / 30, (y + oreSeedValue) / 30); // Increased scale
+
       // Combine noises for better distribution - weighted to generate more ores
       const combinedNoise = (oreNoise * 0.6 + oreTypeNoise * 0.4);
-      
+
       // Adjust rarity threshold to make ores much more common
       // The threshold is now much lower, making it easier to generate ores
       if (combinedNoise > (0.6 - ore.rarity)) {
         // Determine vein size based on a separate noise sample
         const veinSizeFactor = this.oreNoise(x / 5 + 1000, y / 5 + 1000);
-        
+
         // Fix vein size calculation to properly use min and max values
         const veinSizeRange = ore.maxVeinSize - ore.minVeinSize + 1;
         const veinSize = ore.minVeinSize + Math.floor(veinSizeFactor * veinSizeRange);
-        
+
         // Check if this block is part of the vein
         const veinNoiseX = this.oreNoise(x / 6, y / 6); // Adjusted scale
         const veinNoiseY = this.oreNoise(x / 6 + 500, y / 6 + 500);
-        
+
         // Calculate a more stable vein center that doesn't change with each block check
         const regionSize = Math.max(veinSize * 2, 8); // Ensure region is large enough
         const regionX = Math.floor(x / regionSize) * regionSize;
         const regionY = Math.floor(y / regionSize) * regionSize;
-        
+
         // Use the region to generate a stable vein center
         const veinCenterX = regionX + Math.floor(veinNoiseX * regionSize);
         const veinCenterY = regionY + Math.floor(veinNoiseY * regionSize);
-        
+
         const distanceToVeinCenter = Math.sqrt(
-          Math.pow(x - veinCenterX, 2) + 
+          Math.pow(x - veinCenterX, 2) +
           Math.pow(y - veinCenterY, 2)
         );
-        
+
         // Allow for slight variations in vein shape with additional noise
         const veinShapeNoise = this.oreNoise(x / 2 + 200, y / 2 + 200);
         const veinRadius = (veinSize / 2) * (0.85 + veinShapeNoise * 0.3);
-        
+
         // Larger radius for more ore generation
         const enlargedRadius = veinRadius * 1.5;
-        
+
         if (distanceToVeinCenter <= enlargedRadius) {
           // Add some randomness to prevent perfect circles
           const edgeNoise = this.oreNoise(x + y, x - y) * 0.3;
@@ -229,10 +230,23 @@ export class WorldGenerator {
         }
       }
     }
-    
+
     return false;
   }
-  
+
+  /**
+   * Simple hash function to convert a string to a numeric value
+   */
+  private hashStringToNumber(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash % 2477); // Use modulo to keep the values in a reasonable range
+  }
+
   /**
    * Checks if a block position is near air blocks (caves)
    * @param x - The x coordinate
@@ -245,7 +259,7 @@ export class WorldGenerator {
     if (y >= Math.floor(surfaceHeight)) {
       return true; // Above surface is considered "near air"
     }
-    
+
     // Create a cache for this position check to avoid repeated rule evaluation
     // This is important since we call getTile multiple times which processes all rules
     const positionKey = `${x},${y}`;
@@ -253,7 +267,7 @@ export class WorldGenerator {
     if (this._airCheckCache.has(positionKey)) {
       return this._airCheckCache.get(positionKey) as boolean;
     }
-    
+
     // Check neighboring blocks for air (0)
     // We use a smaller area (only direct neighbors) to avoid too many restrictions
     const neighbors = [
@@ -262,15 +276,15 @@ export class WorldGenerator {
       { dx: 1, dy: 0 },  // right
       { dx: -1, dy: 0 }, // left
     ];
-    
+
     // We'll use the cave generation rule to more accurately detect caves
     // rather than just checking for air blocks through getTile
     const caveNoise = this.createNoiseFunction('caves', 0.05);
-    
+
     for (const offset of neighbors) {
       const nx = x + offset.dx;
       const ny = y + offset.dy;
-      
+
       // Check specific generation rules that would create caves
       // This uses the same threshold as in BlockRules.ts cave generation
       const noiseValue = caveNoise(nx, ny);
@@ -278,7 +292,7 @@ export class WorldGenerator {
         this._airCheckCache.set(positionKey, true);
         return true;
       }
-      
+
       // Also check if it's already air through normal rules
       // First check if this neighbor is above the terrain height
       if (ny > Math.floor(this.getHeightAt(nx))) {
@@ -286,11 +300,11 @@ export class WorldGenerator {
         return true;
       }
     }
-    
+
     this._airCheckCache.set(positionKey, false);
     return false;
   }
-  
+
   // Cache for air block checks to improve performance
   private _airCheckCache: Map<string, boolean> = new Map();
 

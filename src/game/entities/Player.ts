@@ -70,13 +70,13 @@ export class Player {
     const block = world.getBlockAt(x, y);
 
     // Don't mine air
-    if (block.id === 0) return;
+    if (block.id === 'air') return;
 
     // Add to inventory
     this.inventory.addItem(block.id);
 
     // Replace with air in the world (ID 0 is air)
-    world.setBlockAt(x, y, 0);
+    world.setBlockAt(x, y, 'air');
 
     // Call onAfterBreak after the block is broken
     if (block.onAfterBreak) {
@@ -92,7 +92,7 @@ export class Player {
     const targetBlock = world.getBlockAt(x, y);
 
     // Only place if current block is air
-    if (targetBlock.id !== 0) return;
+    if (targetBlock.id !== 'air') return;
 
     // Check if placing block would overlap with player
     if (this.wouldBlockOverlapPlayer(x, y)) return;
@@ -221,7 +221,7 @@ export class Player {
 
     if (type === 'mine') {
       // Don't mine air
-      if (block.id === 0) return;
+      if (block.id === 'air') return;
 
       // Check if the block can be mined
       if (block.onBeforeBreak && !block.onBeforeBreak(world, x, y, this)) {
@@ -241,7 +241,7 @@ export class Player {
       }
     } else if (type === 'place') {
       // Only place if current block is air
-      if (block.id !== 0) return;
+      if (block.id !== 'air') return;
 
       // Check if we have any blocks in inventory
       const selectedItem = this.inventory.getSelectedItem();
@@ -303,7 +303,7 @@ export class Player {
     const block = world.getBlockAt(x, y);
 
     // Skip if block is air or not being broken
-    if (block.id === 0 || !block.isBeingBroken(world, x, y)) return;
+    if (block.id === 'air' || !block.isBeingBroken(world, x, y)) return;
 
     const currentTime = performance.now();
     if (currentTime - this.lastBreakingTime < this.BREAKING_INTERVAL) return;

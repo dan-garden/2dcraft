@@ -2,7 +2,7 @@ import { Block } from '../blocks/Block';
 import { BlockVariant } from '../blocks/BlockVariant';
 
 export class Wool extends Block {
-  static readonly id = 32;
+  static readonly id = 'wool';
   readonly id = Wool.id;
   readonly name = 'Wool';
   readonly color = 0xFFA500; // Orange color

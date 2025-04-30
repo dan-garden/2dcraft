@@ -1,7 +1,7 @@
 import { Block } from '../blocks/Block';
 
 export class IronOre extends Block {
-  readonly id = 14;
+  readonly id = 'iron_ore';
   readonly name = 'Iron Ore';
   readonly color = 0x808080; // Gray
   readonly isSolid = true;

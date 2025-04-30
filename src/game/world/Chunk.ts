@@ -7,7 +7,7 @@ export class Chunk {
   static readonly SIZE = 16;
   readonly x: number;
   readonly y: number;
-  readonly data: number[][];
+  readonly data: string[][];
 
   constructor(x: number, y: number, generators: {
     worldGenerator: WorldGenerator;
@@ -23,7 +23,7 @@ export class Chunk {
     worldGenerator: WorldGenerator;
     biomeGenerator: BiomeGenerator;
     structureGenerator: StructureGenerator;
-  }): number[][] {
+  }): string[][] {
     // Use the new generateChunk function from the modular system
     return generateChunk(this.x, this.y, Chunk.SIZE, Chunk.SIZE, generators);
   }

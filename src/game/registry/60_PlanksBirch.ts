@@ -1,7 +1,7 @@
 import { Block } from '../blocks/Block';
 
 export class PlanksBirch extends Block {
-  readonly id = 60;
+  readonly id = 'birch_planks';
   readonly name = 'Birch Planks';
   readonly color = 0x777777;
   readonly isSolid = true;

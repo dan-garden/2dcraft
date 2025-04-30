@@ -6,7 +6,7 @@ import { WorldGenerator, BlockGenerationRule } from './WorldGenerator';
 export function registerBlockRules(worldGenerator: WorldGenerator): void {
   // Beach sand block
   worldGenerator.registerGenerationRule({
-    id: 4, // Sand
+    id: 'sand', // Sand
     name: 'sand_beach',
     priority: 85, // Higher than dirt but lower than grass
     condition: (x, y, generator) => {
@@ -18,7 +18,7 @@ export function registerBlockRules(worldGenerator: WorldGenerator): void {
 
   // Snow-capped mountain tops
   worldGenerator.registerGenerationRule({
-    id: 5, // Snow
+    id: 'snow', // Snow
     name: 'snow',
     priority: 95, // Higher priority than grass so it replaces it
     condition: (x, y, generator) => {
@@ -31,7 +31,7 @@ export function registerBlockRules(worldGenerator: WorldGenerator): void {
   // Cave system using additional noise functions
   const caveNoise = worldGenerator.createNoiseFunction('caves', 0.05);
   worldGenerator.registerGenerationRule({
-    id: 0, // Air for caves
+    id: 'air', // Air for caves
     name: 'caves',
     priority: 50, // Lower than dirt patches but higher than stone
     condition: (x, y, generator) => {
@@ -40,7 +40,7 @@ export function registerBlockRules(worldGenerator: WorldGenerator): void {
       if (y >= Math.floor(height) - 5) {
         return false;
       }
-      
+
       // Use 3D-like noise to create cave systems
       const noiseValue = caveNoise(x, y);
       return noiseValue > 0.5; // Adjust threshold to control cave size
@@ -50,7 +50,7 @@ export function registerBlockRules(worldGenerator: WorldGenerator): void {
   // Clay in swampy areas - Updated to be more specific to swamp biome
   const biomeNoise = worldGenerator.createNoiseFunction('biomes', 0.02);
   worldGenerator.registerGenerationRule({
-    id: 6, // Clay
+    id: 'clay', // Clay
     name: 'clay',
     priority: 75, // Between ores and dirt patches
     condition: (x, y, generator) => {
@@ -61,7 +61,7 @@ export function registerBlockRules(worldGenerator: WorldGenerator): void {
         // This is a simplified way to approximate the swamp biome distribution
         const biomeValue = biomeNoise(x, 0);
         // Swamps are high humidity (positive values in this case)
-        return biomeValue > 0.5; 
+        return biomeValue > 0.5;
       }
       return false;
     }
@@ -70,7 +70,7 @@ export function registerBlockRules(worldGenerator: WorldGenerator): void {
   // Badlands specific blocks - red sand and terracotta distribution
   const badlandsNoise = worldGenerator.createNoiseFunction('badlands', 0.03);
   worldGenerator.registerGenerationRule({
-    id: 8, // Red sand
+    id: 'red_sand', // Red sand
     name: 'red_sand',
     priority: 87, // Higher than regular sand
     condition: (x, y, generator) => {
@@ -88,7 +88,7 @@ export function registerBlockRules(worldGenerator: WorldGenerator): void {
   // Savanna specific blocks - different grass type
   const savannaNoise = worldGenerator.createNoiseFunction('savanna', 0.03);
   worldGenerator.registerGenerationRule({
-    id: 7, // Savanna grass
+    id: 'savanna_grass', // Savanna grass
     name: 'savanna_grass',
     priority: 86, // Higher than beach sand
     condition: (x, y, generator) => {
@@ -105,7 +105,7 @@ export function registerBlockRules(worldGenerator: WorldGenerator): void {
 
   // Bedrock at the bottom of the world
   worldGenerator.registerGenerationRule({
-    id: 30, // Bedrock
+    id: 'bedrock', // Bedrock
     name: 'bedrock',
     priority: 98, // Very high priority to ensure it's at the bottom
     condition: (x, y, generator) => {

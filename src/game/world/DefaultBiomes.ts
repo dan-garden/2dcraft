@@ -14,12 +14,12 @@ export const DEFAULT_BIOMES: BiomeDefinition[] = [
     heightAddition: 0,
     terrainVariability: 0.2, // Very flat terrain
     peakFrequency: 0.3, // Spread out hills
-    surfaceBlock: 2, // Grass
-    subSurfaceBlock: 1, // Dirt
+    surfaceBlock: 'grass', // Grass
+    subSurfaceBlock: 'dirt', // Dirt
     subsurfaceDepth: 4,
-    stoneBlock: 3, // Stone
+    stoneBlock: 'stone', // Stone
   },
-  
+
   // Desert biome - hot and dry with dunes
   {
     id: 'desert',
@@ -32,12 +32,12 @@ export const DEFAULT_BIOMES: BiomeDefinition[] = [
     heightAddition: -2, // Slightly lower elevation
     terrainVariability: 0.4, // Some dunes
     peakFrequency: 0.5, // Medium frequency dunes
-    surfaceBlock: 4, // Sand
-    subSurfaceBlock: 4, // More sand
+    surfaceBlock: 'sand', // Sand
+    subSurfaceBlock: 'sand', // More sand
     subsurfaceDepth: 6, // Deeper sand layer
-    stoneBlock: 1, // Normal stone below
+    stoneBlock: 'stone', // Normal stone below
   },
-  
+
   // Forest biome - moderate temperature with higher humidity and rolling hills
   {
     id: 'forest',
@@ -50,12 +50,12 @@ export const DEFAULT_BIOMES: BiomeDefinition[] = [
     heightAddition: 1, // Slightly higher elevation
     terrainVariability: 0.5, // Rolling hills
     peakFrequency: 0.4, // Medium frequency hills
-    surfaceBlock: 2, // Grass
-    subSurfaceBlock: 1, // Dirt
+    surfaceBlock: 'grass', // Grass
+    subSurfaceBlock: 'dirt', // Dirt
     subsurfaceDepth: 5, // Deeper dirt layer for trees
-    stoneBlock: 3, // Stone
+    stoneBlock: 'stone', // Stone
   },
-  
+
   // Swamp biome - wet and low-lying with flat terrain
   {
     id: 'swamp',
@@ -68,12 +68,12 @@ export const DEFAULT_BIOMES: BiomeDefinition[] = [
     heightAddition: -4, // Much lower elevation
     terrainVariability: 0.1, // Very flat
     peakFrequency: 0.2, // Rare bumps
-    surfaceBlock: 6, // Clay
-    subSurfaceBlock: 1, // Dirt
+    surfaceBlock: 'clay', // Clay
+    subSurfaceBlock: 'dirt', // Dirt
     subsurfaceDepth: 2,
-    stoneBlock: 3, // Stone
+    stoneBlock: 'stone', // Stone
   },
-  
+
   // Snowy mountains - cold and high elevation with rugged peaks
   {
     id: 'snowy_mountains',
@@ -86,17 +86,17 @@ export const DEFAULT_BIOMES: BiomeDefinition[] = [
     heightAddition: 8, // Much higher elevation
     terrainVariability: 0.9, // Very mountainous
     peakFrequency: 0.7, // Frequent peaks
-    surfaceBlock: 5, // Snow
-    subSurfaceBlock: 1, // Dirt
+    surfaceBlock: 'snow', // Snow
+    subSurfaceBlock: 'dirt', // Dirt
     subsurfaceDepth: 3,
-    stoneBlock: 3, // Stone
+    stoneBlock: 'stone', // Stone
   },
-  
+
   // Savanna - hot but not as dry as desert
   {
     id: 'savanna',
     name: 'Savanna',
-    minTemperature: 0.4, 
+    minTemperature: 0.4,
     maxTemperature: 0.9,
     minHumidity: -0.3,
     maxHumidity: 0.2,
@@ -104,12 +104,12 @@ export const DEFAULT_BIOMES: BiomeDefinition[] = [
     heightAddition: 2,
     terrainVariability: 0.3, // Moderately varied terrain
     peakFrequency: 0.4, // Medium frequency small hills
-    surfaceBlock: 7, // Savanna grass (assumed to be ID 7)
-    subSurfaceBlock: 1, // Dirt
+    surfaceBlock: 'savanna_grass', // Savanna grass (assumed to be ID 7)
+    subSurfaceBlock: 'dirt', // Dirt
     subsurfaceDepth: 2,
-    stoneBlock: 3, // Stone
+    stoneBlock: 'stone', // Stone
   },
-  
+
   // Badlands - hot and eroded terrain
   {
     id: 'badlands',
@@ -122,10 +122,10 @@ export const DEFAULT_BIOMES: BiomeDefinition[] = [
     heightAddition: 5, // Higher elevation with mesas
     terrainVariability: 0.7, // Highly varied terrain
     peakFrequency: 0.6, // Frequent mesas and cliffs
-    surfaceBlock: 8, // Red sand/clay (assumed to be ID 8)
-    subSurfaceBlock: 9, // Terracotta (assumed to be ID 9)
+    surfaceBlock: 'red_sand', // Red sand/clay (assumed to be ID 8)
+    subSurfaceBlock: 'terracotta', // Terracotta (assumed to be ID 9)
     subsurfaceDepth: 8, // Deep layers of colored terracotta
-    stoneBlock: 3, // Stone
+    stoneBlock: 'stone', // Stone
   }
 ];
 

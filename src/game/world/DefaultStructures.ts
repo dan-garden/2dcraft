@@ -11,16 +11,16 @@ export const DEFAULT_STRUCTURES: StructureDefinition[] = [
     validBiomes: ['plains', 'forest'], // Removed 'meadow' and 'hills' which aren't in DefaultBiomes
     yOffset: 0, // Placed at ground level
     pattern: [
-      [0, 12, 12, 12, 0], // Leaves (12) - LeavesOak
-      [12, 12, 12, 12, 12],
-      [12, 12, 12, 12, 12],
-      [0, 12, 11, 12, 0], // 11 = LogOak
-      [0, 0, 11, 0, 0], // Single-block trunk
-      [0, 0, 11, 0, 0],
-      [0, 0, 11, 0, 0]
+      ['air', 'leaves_oak', 'leaves_oak', 'leaves_oak', 'air'], // Leaves (12) - LeavesOak
+      ['leaves_oak', 'leaves_oak', 'leaves_oak', 'leaves_oak', 'leaves_oak'],
+      ['leaves_oak', 'leaves_oak', 'leaves_oak', 'leaves_oak', 'leaves_oak'],
+      ['air', 'leaves_oak', 'log_oak', 'leaves_oak', 'air'], // 11 = LogOak
+      ['air', 'air', 'log_oak', 'air', 'air'], // Single-block trunk
+      ['air', 'air', 'log_oak', 'air', 'air'],
+      ['air', 'air', 'log_oak', 'air', 'air']
     ]
   },
-  
+
   // Small oak tree variation (for more diverse forests)
   {
     id: 'small_oak_tree',
@@ -30,14 +30,14 @@ export const DEFAULT_STRUCTURES: StructureDefinition[] = [
     validBiomes: ['plains', 'forest'], // Removed 'meadow' and 'hills' which aren't in DefaultBiomes
     yOffset: 0,
     pattern: [
-      [0, 12, 12, 0], // Smaller leaf canopy
-      [12, 12, 12, 12],
-      [0, 12, 11, 0], // Single-block trunk
-      [0, 0, 11, 0],
-      [0, 0, 11, 0]
+      ['air', 'leaves_oak', 'leaves_oak', 'air'], // Smaller leaf canopy
+      ['leaves_oak', 'leaves_oak', 'leaves_oak', 'leaves_oak'],
+      ['air', 'leaves_oak', 'log_oak', 'air'], // Single-block trunk
+      ['air', 'air', 'log_oak', 'air'],
+      ['air', 'air', 'log_oak', 'air']
     ]
   },
-  
+
   // Snowy tree
   {
     id: 'snowy_tree',
@@ -47,18 +47,18 @@ export const DEFAULT_STRUCTURES: StructureDefinition[] = [
     validBiomes: ['snowy_mountains'],
     yOffset: 0,
     pattern: [
-      [0, 0, 20, 0, 0],
-      [0, 20, 20, 20, 0],
-      [0, 20, 20, 20, 0],
-      [20, 20, 20, 20, 20],
-      [0, 20, 19, 20, 0], // Single-block trunk
-      [0, 0, 19, 0, 0],
-      [0, 0, 19, 0, 0],
-      [0, 0, 19, 0, 0],
-      [0, 0, 19, 0, 0]
+      ['air', 'air', 'leaves_spruce', 'air', 'air'],
+      ['air', 'leaves_spruce', 'leaves_spruce', 'leaves_spruce', 'air'],
+      ['air', 'leaves_spruce', 'leaves_spruce', 'leaves_spruce', 'air'],
+      ['leaves_spruce', 'leaves_spruce', 'leaves_spruce', 'leaves_spruce', 'leaves_spruce'],
+      ['air', 'leaves_spruce', 'log_spruce', 'leaves_spruce', 'air'], // Single-block trunk
+      ['air', 'air', 'log_spruce', 'air', 'air'],
+      ['air', 'air', 'log_spruce', 'air', 'air'],
+      ['air', 'air', 'log_spruce', 'air', 'air'],
+      ['air', 'air', 'log_spruce', 'air', 'air']
     ]
   },
-  
+
   // Small boulder
   {
     id: 'boulder',
@@ -68,9 +68,9 @@ export const DEFAULT_STRUCTURES: StructureDefinition[] = [
     validBiomes: ['plains', 'desert', 'savanna', 'badlands'], // Added savanna and badlands from DefaultBiomes
     yOffset: 0,
     pattern: [
-      [0, 3, 3, 0],
-      [3, 3, 3, 3],
-      [3, 3, 3, 3]
+      ['air', 'stone', 'stone', 'air'],
+      ['stone', 'stone', 'stone', 'stone'],
+      ['stone', 'stone', 'stone', 'stone']
     ]
   },
   {
@@ -81,12 +81,12 @@ export const DEFAULT_STRUCTURES: StructureDefinition[] = [
     validBiomes: ['desert', 'badlands'], // Added badlands for more cacti distribution
     yOffset: 0,
     pattern: [
-      [18],
-      [18],
-      [18]
+      ['cactus'],
+      ['cactus'],
+      ['cactus']
     ],
   },
-  
+
   // New structure: Swamp vegetation
   {
     id: 'swamp_shrub',
@@ -96,11 +96,11 @@ export const DEFAULT_STRUCTURES: StructureDefinition[] = [
     validBiomes: ['swamp'],
     yOffset: 0,
     pattern: [
-      [12, 12, 12], // Simple shrub made of leaves
-      [0, 11, 0]
+      ['leaves_oak', 'leaves_oak', 'leaves_oak'], // Simple shrub made of leaves
+      ['air', 'log_oak', 'air']
     ]
   },
-  
+
   // New structure: Savanna tree (acacia-like)
   {
     id: 'savanna_tree',
@@ -110,11 +110,11 @@ export const DEFAULT_STRUCTURES: StructureDefinition[] = [
     validBiomes: ['savanna'],
     yOffset: 0,
     pattern: [
-      [0, 12, 12, 12, 0],
-      [12, 12, 12, 12, 12],
-      [0, 0, 11, 0, 0],
-      [0, 0, 11, 0, 0],
-      [0, 0, 11, 0, 0]
+      ['air', 'leaves_oak', 'leaves_oak', 'leaves_oak', 'air'],
+      ['leaves_oak', 'leaves_oak', 'leaves_oak', 'leaves_oak', 'leaves_oak'],
+      ['air', 'air', 'log_oak', 'air', 'air'],
+      ['air', 'air', 'log_oak', 'air', 'air'],
+      ['air', 'air', 'log_oak', 'air', 'air']
     ]
   }
 ];
@@ -125,21 +125,21 @@ export const DEFAULT_STRUCTURES: StructureDefinition[] = [
 export function initializeDefaultStructures(structureGenerator: any): void {
   // Register all default structures
   console.log(`Initializing ${DEFAULT_STRUCTURES.length} default structures`);
-  
+
   if (!structureGenerator) {
     console.error("Structure generator is undefined in initializeDefaultStructures!");
     return;
   }
-  
+
   if (typeof structureGenerator.registerStructure !== 'function') {
     console.error("registerStructure is not a function in structure generator!");
     return;
   }
-  
+
   for (const structure of DEFAULT_STRUCTURES) {
     structureGenerator.registerStructure(structure);
   }
-  
+
   try {
     // Attempt to access the structures property to verify registration
     const structureCount = structureGenerator.structures?.length || 'unknown';
