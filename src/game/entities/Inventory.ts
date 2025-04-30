@@ -176,6 +176,10 @@ export class Inventory {
       transition: border-color 0.1s ease;
     `;
 
+    // Store type and index as data attributes for easier access later
+    slot.dataset.slotType = type;
+    slot.dataset.slotIndex = index.toString();
+
     // Add drag and drop event listeners
     slot.addEventListener('mousedown', (e) => this.handleDragStart(e, type, index));
     slot.addEventListener('mouseup', (e) => this.handleDragEnd(e, type, index));
@@ -341,28 +345,95 @@ export class Inventory {
       this.ghostImage = this.createGhostImage(item);
       document.body.appendChild(this.ghostImage);
 
-      // Add mousemove listener for ghost image
-      const moveListener = (e: MouseEvent) => {
-        if (this.ghostImage) {
-          this.ghostImage.style.left = `${e.clientX}px`;
-          this.ghostImage.style.top = `${e.clientY}px`;
-        }
-      };
+      // Position ghost image at mouse position
+      this.ghostImage.style.left = `${e.clientX}px`;
+      this.ghostImage.style.top = `${e.clientY}px`;
 
-      // Add mouseup listener to cleanup
-      const upListener = () => {
-        document.removeEventListener('mousemove', moveListener);
-        document.removeEventListener('mouseup', upListener);
-        if (this.ghostImage) {
-          document.body.removeChild(this.ghostImage);
-          this.ghostImage = null;
-        }
-      };
-
-      document.addEventListener('mousemove', moveListener);
-      document.addEventListener('mouseup', upListener);
+      // Add global event listeners
+      document.addEventListener('mousemove', this.handleGlobalMouseMove);
+      document.addEventListener('mouseup', this.handleGlobalMouseUp);
 
       e.preventDefault();
+    }
+  }
+
+  // New method for handling global mouse move
+  private handleGlobalMouseMove = (e: MouseEvent) => {
+    if (this.ghostImage) {
+      this.ghostImage.style.left = `${e.clientX}px`;
+      this.ghostImage.style.top = `${e.clientY}px`;
+    }
+  };
+
+  // New method for handling global mouse up
+  private handleGlobalMouseUp = (e: MouseEvent) => {
+    // Clean up listeners
+    document.removeEventListener('mousemove', this.handleGlobalMouseMove);
+    document.removeEventListener('mouseup', this.handleGlobalMouseUp);
+
+    // Remove ghost image
+    if (this.ghostImage) {
+      document.body.removeChild(this.ghostImage);
+      this.ghostImage = null;
+    }
+
+    if (this.draggedItem) {
+      // Find if we're over a valid inventory slot
+      let targetElement = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
+      let slotElement: HTMLElement | null = null;
+
+      // Find closest slot element
+      while (targetElement && !slotElement) {
+        if (targetElement.dataset && targetElement.dataset.slotType) {
+          slotElement = targetElement;
+        } else {
+          targetElement = targetElement.parentElement as HTMLElement;
+          if (!targetElement || targetElement === document.body) break;
+        }
+      }
+
+      if (slotElement && slotElement.dataset.slotType && slotElement.dataset.slotIndex) {
+        // We found a valid slot, handle the drop
+        const targetType = slotElement.dataset.slotType as 'hotbar' | 'main';
+        const targetIndex = parseInt(slotElement.dataset.slotIndex, 10);
+
+        this.handleItemSwap(this.draggedItem.source, this.draggedItem.index, targetType, targetIndex);
+      }
+
+      // Reset drag state
+      this.draggedItem = null;
+      if (this.lastHoveredSlot) {
+        this.lastHoveredSlot.style.borderColor = '#555';
+        this.lastHoveredSlot = null;
+      }
+
+      // Update UI to reflect changes or restore item to original position
+      this.updateUI();
+    }
+  };
+
+  // New method to handle item swapping logic
+  private handleItemSwap(sourceType: 'hotbar' | 'main', sourceIndex: number, targetType: 'hotbar' | 'main', targetIndex: number) {
+    // Get source and target items
+    const sourceArray = sourceType === 'hotbar' ? this.hotbar : this.mainInventory;
+    const targetArray = targetType === 'hotbar' ? this.hotbar : this.mainInventory;
+
+    const sourceItem = sourceArray[sourceIndex];
+    const targetItem = targetArray[targetIndex];
+
+    // If same position, do nothing
+    if (sourceType === targetType && sourceIndex === targetIndex) {
+      return;
+    }
+
+    // If same item type, try to stack
+    if (targetItem && sourceItem && targetItem.blockId === sourceItem.blockId) {
+      targetItem.count += sourceItem.count;
+      sourceArray[sourceIndex] = null;
+    } else {
+      // Swap items
+      sourceArray[sourceIndex] = targetItem;
+      targetArray[targetIndex] = sourceItem;
     }
   }
 
@@ -373,9 +444,16 @@ export class Inventory {
       // Find the slot element
       const slot = e.currentTarget as HTMLDivElement;
 
-      // Remove highlight from previous slot
+      // Remove highlight from previous slot if it's not the selected hotbar slot
       if (this.lastHoveredSlot && this.lastHoveredSlot !== slot) {
-        this.lastHoveredSlot.style.borderColor = '#555';
+        const lastIndex = parseInt(this.lastHoveredSlot.dataset.slotIndex || '-1', 10);
+        const isLastHotbar = this.lastHoveredSlot.dataset.slotType === 'hotbar';
+
+        if (!(isLastHotbar && lastIndex === this.selectedIdx)) {
+          this.lastHoveredSlot.style.borderColor = '#555';
+        } else {
+          this.lastHoveredSlot.style.borderColor = '#fff'; // Keep selected slot highlighted
+        }
       }
 
       // Highlight current slot
@@ -386,45 +464,21 @@ export class Inventory {
 
   private handleDragOut(slot: HTMLDivElement) {
     if (this.draggedItem) {
-      slot.style.borderColor = '#555';
+      // Only reset border color if this is not the selected hotbar slot
+      const index = parseInt(slot.dataset.slotIndex || '-1', 10);
+      const isHotbar = slot.dataset.slotType === 'hotbar';
+
+      if (!(isHotbar && index === this.selectedIdx)) {
+        slot.style.borderColor = '#555';
+      } else {
+        slot.style.borderColor = '#fff'; // Keep selected slot highlighted
+      }
     }
   }
 
+  // This method is now unused since we handle everything in handleGlobalMouseUp
   private handleDragEnd(e: MouseEvent, type: 'hotbar' | 'main', index: number) {
-    if (this.draggedItem) {
-      const targetItem = type === 'hotbar' ? this.hotbar[index] : this.mainInventory[index];
-
-      // If same item type, try to stack
-      if (targetItem && targetItem.blockId === this.draggedItem.item.blockId) {
-        targetItem.count += this.draggedItem.item.count;
-        if (this.draggedItem.source === 'hotbar') {
-          this.hotbar[this.draggedItem.index] = null;
-        } else {
-          this.mainInventory[this.draggedItem.index] = null;
-        }
-      } else {
-        // Swap items
-        if (this.draggedItem.source === 'hotbar') {
-          this.hotbar[this.draggedItem.index] = targetItem;
-        } else {
-          this.mainInventory[this.draggedItem.index] = targetItem;
-        }
-
-        if (type === 'hotbar') {
-          this.hotbar[index] = this.draggedItem.item;
-        } else {
-          this.mainInventory[index] = this.draggedItem.item;
-        }
-      }
-
-      // Reset drag state
-      this.draggedItem = null;
-      if (this.lastHoveredSlot) {
-        this.lastHoveredSlot.style.borderColor = '#555';
-        this.lastHoveredSlot = null;
-      }
-      this.updateUI();
-    }
+    // This is now a no-op as dragging is handled by global handlers
   }
 
   // Toggle inventory visibility
