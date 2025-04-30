@@ -12,6 +12,12 @@ import { SwampBiome } from './biomes/SwampBiome';
 import { OakTree } from './structures/OakTree';
 import { CoalOre } from './structures/CoalOre';
 import { IronOre } from './structures/IronOre';
+import { CopperOre } from './structures/CopperOre';
+import { GoldOre } from './structures/GoldOre';
+import { RedstoneOre } from './structures/RedstoneOre';
+import { LapisOre } from './structures/LapisOre';
+import { DiamondOre } from './structures/DiamondOre';
+import { EmeraldOre } from './structures/EmeraldOre';
 import { OreVein } from './structures/OreVein';
 
 /**
@@ -46,8 +52,14 @@ export function initializeWorldGeneration(seed: string): {
   // Register more surface structures as needed
 
   // Register ore structures
-  structureManager.registerStructure(new CoalOre());
-  structureManager.registerStructure(new IronOre());
+  structureManager.registerStructure(new CoalOre(biomeManager));
+  structureManager.registerStructure(new IronOre(biomeManager));
+  structureManager.registerStructure(new CopperOre(biomeManager));
+  structureManager.registerStructure(new GoldOre(biomeManager));
+  structureManager.registerStructure(new RedstoneOre(biomeManager));
+  structureManager.registerStructure(new LapisOre(biomeManager));
+  structureManager.registerStructure(new DiamondOre(biomeManager));
+  structureManager.registerStructure(new EmeraldOre(biomeManager));
   // Register more ore types as needed
 
   return {

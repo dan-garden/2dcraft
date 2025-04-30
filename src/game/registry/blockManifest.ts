@@ -32,6 +32,9 @@ import { PlanksOak } from './58_PlanksOak';
 import { PlanksSpruce } from './59_PlanksSpruce';
 import { PlanksBirch } from './60_PlanksBirch';
 import { PlanksJungle } from './61_PlanksJungle';
+import { CopperOre } from './70_CopperOre';
+import { RedstoneOre } from './71_RedstoneOre';
+import { LapisOre } from './72_LapisOre';
 
 // Export all block classes in an array
 export const blockClasses = [
@@ -69,4 +72,7 @@ export const blockClasses = [
   PlanksSpruce,
   PlanksBirch,
   PlanksJungle,
+  CopperOre,
+  RedstoneOre,
+  LapisOre,
 ]; 

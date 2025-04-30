@@ -1,17 +1,17 @@
 import { OreVein } from './OreVein';
 import { BiomeManager } from '../BiomeManager';
 
-export class CoalOre extends OreVein {
+export class CopperOre extends OreVein {
   constructor(biomeManager?: BiomeManager) {
     super({
-      id: 'coal_ore',
-      name: 'Coal Ore',
-      rarity: 0.6,
+      id: 'copper_ore',
+      name: 'Copper Ore',
+      rarity: 0.3,
       minVeinSize: 4,
-      maxVeinSize: 15,
-      minY: -120,
-      maxY: 128,
-      minSpaceBetween: 6,
+      maxVeinSize: 10,
+      minY: -80,
+      maxY: 48,
+      minSpaceBetween: 8,
       inBlock: 'stone',
       validBiomes: [],
       biomeManager: biomeManager

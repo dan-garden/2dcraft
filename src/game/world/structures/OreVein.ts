@@ -1,6 +1,7 @@
 import { BaseStructure, StructureProps } from './BaseStructure';
 import { createNoise2D } from 'simplex-noise';
 import alea from 'alea';
+import { BiomeManager } from '../BiomeManager';
 
 export interface OreVeinProps extends StructureProps {
   minVeinSize: number;
@@ -10,6 +11,8 @@ export interface OreVeinProps extends StructureProps {
   minSpaceBetween: number;
   // What block this ore generates in (default is stone)
   inBlock?: string;
+  // Reference to BiomeManager to get all biomes dynamically (optional)
+  biomeManager?: BiomeManager;
 }
 
 export class OreVein extends BaseStructure {
@@ -29,11 +32,23 @@ export class OreVein extends BaseStructure {
   private shapeNoise: (x: number, y: number) => number;
 
   constructor(props: OreVeinProps) {
+    // If biomeManager is provided, get all biome IDs for validBiomes
+    // otherwise use provided validBiomes or the default list
+    let validBiomes = props.validBiomes;
+
+    if (props.biomeManager) {
+      // Get all biome IDs from the BiomeManager
+      validBiomes = props.biomeManager.getAllBiomes().map(biome => biome.id);
+    } else if (!validBiomes) {
+      // Fallback to the default list if neither biomeManager nor validBiomes are provided
+      validBiomes = ['plains', 'forest', 'desert', 'swamp', 'snowy_mountains', 'savanna', 'badlands'];
+    }
+
     super({
       ...props,
-      // Default valid biomes if not specified
-      validBiomes: props.validBiomes || ['plains', 'forest', 'desert', 'swamp', 'snowy_mountains', 'savanna', 'badlands']
+      validBiomes: validBiomes
     });
+
     this.minVeinSize = props.minVeinSize;
     this.maxVeinSize = props.maxVeinSize;
     this.minY = props.minY;
@@ -85,10 +100,20 @@ export class OreVein extends BaseStructure {
     setBlockFn: (x: number, y: number, blockId: string) => void,
     getBlockFn: (x: number, y: number) => string
   ): void {
-    // Determine target vein size from min/max range using simplex noise
+    // Generate a random value between 0 and 1
+    const randomValue = (this.veinSizeNoise(x / 100, y / 100) + 1) / 2;
+
+    // Apply exponential distribution to make larger veins rarer
+    // For rare ores (low rarity value), we increase the exponent to make large veins even rarer
+    // For common ores (high rarity value), we use a smaller exponent
+    const baseExponent = 2.0;
+    const rarityFactor = Math.max(0.1, Math.min(1.0, 1.0 - this.rarity)); // Ensures value between 0.1 and 1.0
+    const exponent = baseExponent + rarityFactor * 2.0; // Exponent ranges from 2.0 to 4.0
+    const exponentialValue = Math.pow(randomValue, exponent);
+
+    // Determine target vein size from min/max range using the exponential distribution
     const targetVeinSize = Math.floor(
-      this.minVeinSize +
-      ((this.veinSizeNoise(x / 100, y / 100) + 1) / 2) * (this.maxVeinSize - this.minVeinSize + 1)
+      this.minVeinSize + exponentialValue * (this.maxVeinSize - this.minVeinSize + 1)
     );
 
     // Calculate a working radius for initial approach
@@ -282,5 +307,40 @@ export class OreVein extends BaseStructure {
       );
       OreVein.veinCache.set(oreId, filteredVeins);
     }
+  }
+
+  /**
+   * Debug method to simulate vein size distribution
+   * Shows how often different vein sizes will appear with the exponential formula
+   */
+  public static debugVeinSizeDistribution(minSize: number, maxSize: number, rarity: number = 0.5, samples: number = 1000): { [size: number]: number } {
+    const distribution: { [size: number]: number } = {};
+
+    // Initialize all possible sizes with zero count
+    for (let size = minSize; size <= maxSize; size++) {
+      distribution[size] = 0;
+    }
+
+    // Run simulation
+    for (let i = 0; i < samples; i++) {
+      // Simulate random value between 0 and 1
+      const randomValue = Math.random();
+
+      // Apply exponential distribution with the same formula as in generateAt
+      const baseExponent = 2.0;
+      const rarityFactor = Math.max(0.1, Math.min(1.0, 1.0 - rarity));
+      const exponent = baseExponent + rarityFactor * 2.0;
+      const exponentialValue = Math.pow(randomValue, exponent);
+
+      // Calculate vein size
+      const veinSize = Math.floor(
+        minSize + exponentialValue * (maxSize - minSize + 1)
+      );
+
+      // Increment count for this size
+      distribution[veinSize]++;
+    }
+
+    return distribution;
   }
 } 

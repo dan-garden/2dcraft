@@ -1,18 +1,20 @@
 import { OreVein } from './OreVein';
+import { BiomeManager } from '../BiomeManager';
 
 export class IronOre extends OreVein {
-  constructor() {
+  constructor(biomeManager?: BiomeManager) {
     super({
       id: 'iron_ore',
       name: 'Iron Ore',
-      rarity: 0.5,
+      rarity: 0.35,
       minVeinSize: 5,
       maxVeinSize: 12,
-      minY: -100,
-      maxY: 100,
+      minY: -128,
+      maxY: 256,
       minSpaceBetween: 8,
       inBlock: 'stone',
-      validBiomes: ['plains', 'forest', 'desert', 'swamp', 'snowy_mountains', 'savanna', 'badlands']
+      validBiomes: [], // Empty array, let OreVein constructor handle it
+      biomeManager: biomeManager
     });
   }
 } 
