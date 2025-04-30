@@ -1,7 +1,7 @@
 import { Block } from '../blocks/Block';
 
-export class LeavesJungle extends Block {
-  readonly id = 'leaves_jungle';
+export class JungleLeaves extends Block {
+  readonly id = 'jungle_leaves';
   readonly name = 'Jungle Leaves';
   readonly color = 0x00AA00;
   readonly isSolid = true;

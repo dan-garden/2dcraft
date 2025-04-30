@@ -10,13 +10,13 @@ export class OakTree extends PatternStructure {
       validBiomes: ['plains', 'forest'],
       yOffset: 0,
       pattern: [
-        ['air', 'leaves_oak', 'leaves_oak', 'leaves_oak', 'air'],
-        ['leaves_oak', 'leaves_oak', 'leaves_oak', 'leaves_oak', 'leaves_oak'],
-        ['leaves_oak', 'leaves_oak', 'leaves_oak', 'leaves_oak', 'leaves_oak'],
-        ['air', 'leaves_oak', 'log_oak', 'leaves_oak', 'air'],
-        ['air', 'air', 'log_oak', 'air', 'air'],
-        ['air', 'air', 'log_oak', 'air', 'air'],
-        ['air', 'air', 'log_oak', 'air', 'air']
+        ['air', 'oak_leaves', 'oak_leaves', 'oak_leaves', 'air'],
+        ['oak_leaves', 'oak_leaves', 'oak_leaves', 'oak_leaves', 'oak_leaves'],
+        ['oak_leaves', 'oak_leaves', 'oak_leaves', 'oak_leaves', 'oak_leaves'],
+        ['air', 'oak_leaves', 'oak_log', 'oak_leaves', 'air'],
+        ['air', 'air', 'oak_log', 'air', 'air'],
+        ['air', 'air', 'oak_log', 'air', 'air'],
+        ['air', 'air', 'oak_log', 'air', 'air']
       ]
     });
   }

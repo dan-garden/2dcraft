@@ -1,7 +1,7 @@
 import { Block } from '../blocks/Block';
 
-export class LogOak extends Block {
-  readonly id = 'log_oak';
+export class OakLog extends Block {
+  readonly id = 'oak_log';
   readonly name = 'Oak Log';
   readonly color = 0x777777; // Brown
   readonly isSolid = true;

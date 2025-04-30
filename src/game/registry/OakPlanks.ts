@@ -1,6 +1,6 @@
 import { Block } from '../blocks/Block';
 
-export class PlanksOak extends Block {
+export class OakPlanks extends Block {
   readonly id = 'oak_planks';
   readonly name = 'Oak Planks';
   readonly color = 0x777777;
