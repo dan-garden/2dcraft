@@ -3,22 +3,15 @@ import { BiomeManager } from './BiomeManager';
 import { StructureManager } from './StructureManager';
 
 // Biome imports
-import { PlainsBiome } from './biomes/PlainsBiome';
-import { DesertBiome } from './biomes/DesertBiome';
-import { ForestBiome } from './biomes/ForestBiome';
-import { SwampBiome } from './biomes/SwampBiome';
+import { PlainsBiome } from '../biomes/PlainsBiome';
+import { DesertBiome } from '../biomes/DesertBiome';
+import { ForestBiome } from '../biomes/ForestBiome';
+import { SwampBiome } from '../biomes/SwampBiome';
 
 // Structure imports
-import { OakTree } from './structures/OakTree';
-import { CoalOre } from './structures/CoalOre';
-import { IronOre } from './structures/IronOre';
-import { CopperOre } from './structures/CopperOre';
-import { GoldOre } from './structures/GoldOre';
-import { RedstoneOre } from './structures/RedstoneOre';
-import { LapisOre } from './structures/LapisOre';
-import { DiamondOre } from './structures/DiamondOre';
-import { EmeraldOre } from './structures/EmeraldOre';
-import { OreVein } from './structures/OreVein';
+import { OakTree } from '../structures/OakTree';
+import { CoalOre, IronOre, CopperOre, GoldOre, RedstoneOre, LapisOre, DiamondOre, EmeraldOre } from '../structures/Ores';
+import { OreVein } from '../structures/OreVein';
 
 /**
  * Sets up a complete world generation system with biomes and structures

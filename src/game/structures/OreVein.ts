@@ -1,7 +1,7 @@
 import { BaseStructure, StructureProps } from './BaseStructure';
 import { createNoise2D } from 'simplex-noise';
 import alea from 'alea';
-import { BiomeManager } from '../BiomeManager';
+import { BiomeManager } from '../world/BiomeManager';
 
 export interface OreVeinProps extends StructureProps {
   minVeinSize: number;

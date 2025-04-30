@@ -16,8 +16,8 @@ const maxBlocksY = Math.ceil(window.innerHeight / 16) + WORLD_BUFFER * 2;
 const maxTilesPerBlock = maxBlocksX * maxBlocksY * 4; // Extra buffer for safety
 
 // Initialize game world
-// const seed = Math.random().toString();
-const seed = "1234567890";
+const seed = Math.random().toString();
+// const seed = "1234567890";
 const world = new World(seed);
 
 // Three.js setup

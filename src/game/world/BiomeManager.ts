@@ -1,5 +1,5 @@
 import { WorldGenerator } from './WorldGenerator';
-import { BaseBiome } from './biomes/BaseBiome';
+import { BaseBiome } from '../biomes/BaseBiome';
 
 export class BiomeManager {
   private biomes: BaseBiome[] = [];

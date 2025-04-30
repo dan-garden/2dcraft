@@ -1,7 +1,7 @@
 import { WorldGenerator } from './WorldGenerator';
-import { BaseStructure } from './structures/BaseStructure';
-import { OreVein } from './structures/OreVein';
-import { PatternStructure } from './structures/PatternStructure';
+import { BaseStructure } from '../structures/BaseStructure';
+import { OreVein } from '../structures/OreVein';
+import { PatternStructure } from '../structures/PatternStructure';
 
 export class StructureManager {
   private structures: BaseStructure[] = [];
