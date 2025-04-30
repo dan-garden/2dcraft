@@ -5,5 +5,5 @@ export class Dirt extends Block {
   readonly name = 'Dirt';
   readonly color = 0x8B4513; // Brown
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/dirt.png';
+  readonly texturePath = './textures/blocks/dirt.png';
 } 

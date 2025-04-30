@@ -5,7 +5,7 @@ export class Stone extends Block {
   readonly name = 'Stone';
   readonly color = 0x777777; // Light Gray
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/stone.png';
+  readonly texturePath = './textures/blocks/stone.png';
   readonly tinted = false;
   readonly hardness = 4.0; // Harder than dirt/grass
 } 

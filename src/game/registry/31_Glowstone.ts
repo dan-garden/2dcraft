@@ -6,7 +6,7 @@ export class Glowstone extends Block {
   readonly color = 0xFFFF77; // Yellow light
   readonly isSolid = true;
   readonly isTransparent = true;
-  readonly texturePath = './assets/textures/glowstone.png';
+  readonly texturePath = './textures/blocks/glowstone.png';
   readonly tinted = false;
   readonly lightEmission = 15; // Maximum light level
 } 

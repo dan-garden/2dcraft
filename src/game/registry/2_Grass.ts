@@ -5,6 +5,6 @@ export class Grass extends Block {
   readonly name = 'Grass';
   readonly color = 0x648732; // Bright Green
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/grass_top.png';
+  readonly texturePath = './textures/blocks/grass_block_top.png';
   readonly tinted = true; // Enable tinting for this block
 } 

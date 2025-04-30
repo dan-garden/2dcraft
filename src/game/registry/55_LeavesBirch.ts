@@ -2,10 +2,10 @@ import { Block } from '../blocks/Block';
 
 export class LeavesBirch extends Block {
   readonly id = 55;
-  readonly name = 'Leaves Birch';
+  readonly name = 'Birch Leaves';
   readonly color = 0x00AA00;
   readonly isSolid = true;
   readonly isTransparent = true;
-  readonly texturePath = './assets/textures/leaves_birch.png';
+  readonly texturePath = './textures/blocks/birch_leaves.png';
   readonly tinted = true;
 } 

@@ -5,6 +5,6 @@ export class Brick extends Block {
   readonly name = 'Brick';
   readonly color = 0x777777;
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/brick.png';
+  readonly texturePath = './textures/blocks/brick.png';
   readonly tinted = false;
 } 

@@ -5,6 +5,6 @@ export class Bookshelf extends Block {
   readonly name = 'Bookshelf';
   readonly color = 0x777777;
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/bookshelf.png';
+  readonly texturePath = './textures/blocks/bookshelf.png';
   readonly tinted = false;
 } 

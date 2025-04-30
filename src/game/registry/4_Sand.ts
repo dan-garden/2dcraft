@@ -5,5 +5,5 @@ export class Sand extends Block {
   readonly name = 'Sand';
   readonly color = 0xFFFF00; // Yellow
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/sand.png';
+  readonly texturePath = './textures/blocks/sand.png';
 } 

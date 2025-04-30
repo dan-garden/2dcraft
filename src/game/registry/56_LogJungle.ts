@@ -5,6 +5,6 @@ export class LogJungle extends Block {
   readonly name = 'Jungle Log';
   readonly color = 0x777777;
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/log_jungle.png';
+  readonly texturePath = './textures/blocks/jungle_log.png';
   readonly tinted = false;
 } 

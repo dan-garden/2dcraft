@@ -32,7 +32,7 @@ const camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
 scene.fog = new THREE.Fog(0x9FDFFF, 40, 120); // Brighter blue fog that starts further away
 
 // Add subtle ambient occlusion for depth perception
-const aoTex = new THREE.TextureLoader().load('./assets/textures/ao_map.png');
+const aoTex = new THREE.TextureLoader().load('./textures/blocks/ao_map.png');
 aoTex.wrapS = THREE.RepeatWrapping;
 aoTex.wrapT = THREE.RepeatWrapping;
 

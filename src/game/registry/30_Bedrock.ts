@@ -5,6 +5,6 @@ export class Bedrock extends Block {
   readonly name = 'Bedrock';
   readonly color = 0x8B4513; // Brown
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/bedrock.png';
+  readonly texturePath = './textures/blocks/bedrock.png';
   readonly hardness = Infinity; // Unbreakable
 }

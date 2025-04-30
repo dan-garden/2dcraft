@@ -5,6 +5,6 @@ export class GoldOre extends Block {
   readonly name = 'Gold Ore';
   readonly color = 0xFFD700; // Gold
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/gold_ore.png';
+  readonly texturePath = './textures/blocks/gold_ore.png';
   readonly tinted = false;
 } 

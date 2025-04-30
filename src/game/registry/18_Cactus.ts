@@ -6,6 +6,6 @@ export class Cactus extends Block {
   readonly color = 0x00AA00; // Bright Green
   readonly isSolid = true;
   readonly isTransparent = true; // Cactus should be transparent
-  readonly texturePath = './assets/textures/cactus_side.png';
+  readonly texturePath = './textures/blocks/cactus_side.png';
   readonly tinted = true;
 } 

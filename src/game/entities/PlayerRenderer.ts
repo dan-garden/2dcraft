@@ -8,10 +8,10 @@ export class PlayerRenderer {
 
   // Player textures
   private readonly textureInfo: Array<{ key: TextureKeys, path: string }> = [
-    { key: 'leftStill', path: './assets/textures/player_1.png' },
-    { key: 'rightStill', path: './assets/textures/player_2.png' },
-    { key: 'leftRunning', path: './assets/textures/player_3.png' },
-    { key: 'rightRunning', path: './assets/textures/player_4.png' }
+    { key: 'leftStill', path: './textures/entity/player/2d/player_1.png' },
+    { key: 'rightStill', path: './textures/entity/player/2d/player_2.png' },
+    { key: 'leftRunning', path: './textures/entity/player/2d/player_3.png' },
+    { key: 'rightRunning', path: './textures/entity/player/2d/player_4.png' }
   ];
 
   // Loaded textures

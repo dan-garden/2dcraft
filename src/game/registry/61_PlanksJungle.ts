@@ -5,6 +5,6 @@ export class PlanksJungle extends Block {
   readonly name = 'Jungle Planks';
   readonly color = 0x777777;
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/planks_jungle.png';
+  readonly texturePath = './textures/blocks/jungle_planks.png';
   readonly tinted = false;
 } 

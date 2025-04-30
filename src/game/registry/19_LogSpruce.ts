@@ -5,6 +5,6 @@ export class LogSpruce extends Block {
   readonly name = 'Spruce Log';
   readonly color = 0x777777; // Brown
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/log_spruce.png';
+  readonly texturePath = './textures/blocks/log_spruce.png';
   readonly tinted = false;
 } 

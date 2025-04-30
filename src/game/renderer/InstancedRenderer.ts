@@ -122,7 +122,7 @@ export class InstancedRenderer {
   private loadBreakingStageTextures(): void {
     const textureLoader = new THREE.TextureLoader();
     for (let i = 0; i < 10; i++) {
-      const texture = textureLoader.load(`./assets/textures/destroy_stage_${i}.png`);
+      const texture = textureLoader.load(`./textures/blocks/destroy_stage_${i}.png`);
       texture.magFilter = THREE.NearestFilter;
       texture.minFilter = THREE.NearestFilter;
       texture.generateMipmaps = false;

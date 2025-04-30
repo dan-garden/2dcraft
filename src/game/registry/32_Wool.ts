@@ -8,7 +8,7 @@ export class Wool extends Block {
   readonly color = 0xFFA500; // Orange color
   readonly isSolid = true;
   readonly isTransparent = true;
-  readonly texturePath = './assets/textures/wool_colored_black.png';
+  readonly texturePath = './textures/blocks/wool_colored_black.png';
   readonly lightEmission = 12; // High light emission
   readonly shouldRegister = false; // Base wool block should not be registered
   readonly hasVariants = true; // Wool has color variants
@@ -45,7 +45,7 @@ export class Wool extends Block {
       Wool.id + colorIndex,
       `${color.name} Wool`,
       color.color,
-      `./assets/textures/${color.texture}`
+      `./textures/blocks/${color.texture}`
     );
   }
 

@@ -5,6 +5,6 @@ export class PlanksBirch extends Block {
   readonly name = 'Birch Planks';
   readonly color = 0x777777;
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/planks_birch.png';
+  readonly texturePath = './textures/blocks/birch_planks.png';
   readonly tinted = false;
 } 

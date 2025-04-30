@@ -5,6 +5,6 @@ export class PlanksSpruce extends Block {
   readonly name = 'Spruce Planks';
   readonly color = 0x777777;
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/planks_spruce.png';
+  readonly texturePath = './textures/blocks/spruce_planks.png';
   readonly tinted = false;
 } 

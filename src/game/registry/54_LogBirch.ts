@@ -5,6 +5,6 @@ export class LogBirch extends Block {
   readonly name = 'Birch Log';
   readonly color = 0x777777;
   readonly isSolid = true;
-  readonly texturePath = './assets/textures/log_birch.png';
+  readonly texturePath = './textures/blocks/birch_log.png';
   readonly tinted = false;
 } 
