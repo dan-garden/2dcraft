@@ -1,6 +1,6 @@
 import { WorldGenerator } from './WorldGenerator';
-import { BiomeGenerator } from './BiomeGenerator';
-import { StructureGenerator } from './StructureGenerator';
+import { BiomeManager } from './BiomeManager';
+import { StructureManager } from './StructureManager';
 import { generateChunk } from './WorldGeneration';
 
 export class Chunk {
@@ -11,8 +11,8 @@ export class Chunk {
 
   constructor(x: number, y: number, generators: {
     worldGenerator: WorldGenerator;
-    biomeGenerator: BiomeGenerator;
-    structureGenerator: StructureGenerator;
+    biomeManager: BiomeManager;
+    structureManager: StructureManager;
   }) {
     this.x = x;
     this.y = y;
@@ -21,8 +21,8 @@ export class Chunk {
 
   private generate(generators: {
     worldGenerator: WorldGenerator;
-    biomeGenerator: BiomeGenerator;
-    structureGenerator: StructureGenerator;
+    biomeManager: BiomeManager;
+    structureManager: StructureManager;
   }): string[][] {
     // Use the new generateChunk function from the modular system
     return generateChunk(this.x, this.y, Chunk.SIZE, Chunk.SIZE, generators);

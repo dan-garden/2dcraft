@@ -163,7 +163,7 @@ function animate(timestamp: number) {
   const block = world.getBlockAt(blockX, blockY);
 
   // Get biome information at mouse position
-  const biome = world.getBiomeGenerator().getBiomeAt(blockX, blockY);
+  const biome = world.getBiomeManager().getBiomeAt(blockX, blockY);
   const biomeInfo = biome ? biome.name : 'None';
   const heightAtPos = world.getWorldGenerator().getHeightAt(blockX);
 

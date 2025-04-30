@@ -48,6 +48,11 @@ export class WorldGenerator {
     this.biomeGenerator = biomeGenerator;
   }
 
+  // Alias for compatibility with new BiomeManager
+  setBiomeManager(biomeManager: { modifyHeight: (x: number, baseHeight: number) => number }): void {
+    this.biomeGenerator = biomeManager;
+  }
+
   private registerDefaultRules(): void {
     // Air rule
     this.registerGenerationRule({

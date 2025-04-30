@@ -1,7 +1,7 @@
 import { Chunk } from './Chunk';
 import { WorldGenerator } from './WorldGenerator';
-import { BiomeGenerator } from './BiomeGenerator';
-import { StructureGenerator } from './StructureGenerator';
+import { BiomeManager } from './BiomeManager';
+import { StructureManager } from './StructureManager';
 import { Block } from '../blocks/Block';
 import { blockRegistry } from '../blocks';
 import { initializeWorldGeneration } from './WorldGeneration';
@@ -9,8 +9,8 @@ import { initializeWorldGeneration } from './WorldGeneration';
 export class World {
   private generators: {
     worldGenerator: WorldGenerator;
-    biomeGenerator: BiomeGenerator;
-    structureGenerator: StructureGenerator;
+    biomeManager: BiomeManager;
+    structureManager: StructureManager;
   };
   private chunks = new Map<string, Chunk>();
   private modifiedBlocks = new Map<string, string>(); // Only store modified blocks
@@ -30,14 +30,14 @@ export class World {
     // Initialize the world with the new modular generation system
     this.generators = initializeWorldGeneration(seed);
 
-    // Verify structure generator initialization
-    if (!this.generators.structureGenerator) {
-      console.error("Structure generator was not initialized in World constructor!");
+    // Verify structure manager initialization
+    if (!this.generators.structureManager) {
+      console.error("Structure manager was not initialized in World constructor!");
     } else {
       // Try to check if any structures are registered
       try {
         // @ts-ignore - accessing private property for debugging
-        const structureCount = this.generators.structureGenerator.structures?.length || 0;
+        const structureCount = this.generators.structureManager.structures?.length || 0;
         console.log(`World initialized with ${structureCount} registered structures`);
       } catch (error) {
         console.error("Unable to verify structure count:", error);
@@ -223,31 +223,43 @@ export class World {
     return this.generators.worldGenerator;
   }
 
-  public getBiomeGenerator(): BiomeGenerator {
-    return this.generators.biomeGenerator;
+  public getBiomeManager(): BiomeManager {
+    return this.generators.biomeManager;
   }
 
-  public getStructureGenerator(): StructureGenerator {
-    return this.generators.structureGenerator;
+  public getStructureManager(): StructureManager {
+    return this.generators.structureManager;
+  }
+
+  // Backwards compatibility methods for compatibility with older code
+  public getBiomeGenerator(): BiomeManager {
+    return this.generators.biomeManager;
+  }
+
+  public getStructureGenerator(): StructureManager {
+    return this.generators.structureManager;
   }
 
   // Generate a structure at the specified location
   public generateStructure(structureId: string, x: number, y: number): boolean {
-    const biome = this.generators.biomeGenerator.getBiomeAt(x, 0); // Only use x for biome determination
+    const biome = this.generators.biomeManager.getBiomeAt(x, 0); // Only use x for biome determination
 
-    // Place the structure directly
-    const structure = this.generators.structureGenerator.getStructureAt(x, y, biome.id);
-    if (!structure) return false;
+    // If a specific structure ID is provided, find that structure
+    let structureToPlace = null;
+    if (structureId) {
+      // @ts-ignore - accessing private property for debugging
+      structureToPlace = this.generators.structureManager.structures?.find(s => s.id === structureId);
+    }
 
-    // If we want a specific structure, override the one found by coordinates
-    const structureToPlace = structureId ?
-      this.generators.structureGenerator['structures'].find(s => s.id === structureId) :
-      structure;
+    if (!structureToPlace) {
+      // If no structure found or no ID provided, check if one should generate here
+      structureToPlace = this.generators.structureManager.getStructureAt(x, y, biome.id);
+    }
 
     if (!structureToPlace) return false;
 
     // Place the structure
-    this.generators.structureGenerator.placeStructure(
+    this.generators.structureManager.generateStructureAt(
       x, y, structureToPlace,
       (worldX, worldY, blockId) => this.setBlockAt(worldX, worldY, blockId)
     );
@@ -264,11 +276,41 @@ export class World {
 
   // Debug methods for visualizing the terrain transitions
   public debugHeightProfile(startX: number, endX: number): Array<[number, number]> {
-    return this.generators.biomeGenerator.debugHeightProfile(startX, endX);
+    const result: Array<[number, number]> = [];
+    const generator = this.generators.worldGenerator;
+
+    // Sample heights at regular intervals
+    for (let x = startX; x <= endX; x++) {
+      const height = generator.getHeightAt(x);
+      result.push([x, height]);
+    }
+
+    return result;
   }
 
   public debugBiomeBoundaries(startX: number, endX: number): Array<[number, string]> {
-    return this.generators.biomeGenerator.debugBiomeBoundaries(startX, endX);
+    const result: Array<[number, string]> = [];
+    const CHUNK_SIZE = 16;
+    const sampled: { [key: number]: boolean } = {};
+
+    // Sample biomes at regular intervals
+    for (let x = startX; x <= endX; x++) {
+      const chunkX = Math.floor(x / CHUNK_SIZE);
+
+      // Only sample once per chunk to detect boundaries
+      if (!sampled[chunkX]) {
+        const biome = this.generators.biomeManager.getBiomeForChunk(chunkX);
+        result.push([x, biome.id]);
+        sampled[chunkX] = true;
+      }
+
+      // Also mark chunk boundaries
+      if (x % CHUNK_SIZE === 0) {
+        result.push([x, "BOUNDARY"]);
+      }
+    }
+
+    return result;
   }
 
   // Method to handle debug toggle event from InputController
@@ -282,25 +324,31 @@ export class World {
     console.log("Structure System Debug");
     console.log("=====================");
 
-    if (!this.generators.structureGenerator) {
-      console.error("Structure generator is undefined!");
+    if (!this.generators.structureManager) {
+      console.error("Structure manager is undefined!");
       return;
     }
 
     try {
       // @ts-ignore - accessing private property for debugging
-      const structures = this.generators.structureGenerator.structures || [];
+      const structures = this.generators.structureManager.structures || [];
       console.log(`Registered structures: ${structures.length}`);
 
       if (structures.length === 0) {
         console.error("No structures are registered!");
       } else {
-        // Get all biome IDs from biome generator
-        const biomes = this.generators.biomeGenerator.getAllBiomes();
+        // Get all biome IDs from biome manager
+        const biomes = this.generators.biomeManager.getAllBiomes();
         const biomeIds = biomes.map(b => b.id);
 
-        // Use the compatibility checker
-        this.generators.structureGenerator.logBiomeStructureCompatibility(biomeIds);
+        // Log structure-biome compatibility if available
+        // @ts-ignore - might not have this method
+        if (typeof this.generators.structureManager.logBiomeStructureCompatibility === 'function') {
+          this.generators.structureManager.logBiomeStructureCompatibility(biomeIds);
+        } else {
+          console.log(`Available biomes: [${biomeIds.join(", ")}]`);
+          console.log("No compatibility checking method available in structure manager");
+        }
       }
     } catch (error) {
       console.error("Error during structure debug:", error);

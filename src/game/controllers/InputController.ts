@@ -234,7 +234,7 @@ export class InputController {
           const { x, y } = this.hoverBlock;
           console.log(`Attempting to place oak_tree at cursor position (${x}, ${y})`);
 
-          const biome = this.world.getBiomeGenerator().getBiomeAt(x, 0);
+          const biome = this.world.getBiomeManager().getBiomeAt(x, 0);
           console.log(`Current biome: ${biome.id} (${biome.name})`);
 
           const success = this.world.generateStructure('oak_tree', x, y);
