@@ -9,7 +9,7 @@ import { ForestBiome } from '../biomes/ForestBiome';
 import { SwampBiome } from '../biomes/SwampBiome';
 
 // Structure imports
-import { OakTree } from '../structures/OakTree';
+import { OakTree, BirchTree, SpruceTree, AcaciaTree, JungleTree, DarkOakTree, CactusPlant } from '../structures/Trees';
 import { CoalOre, IronOre, CopperOre, GoldOre, RedstoneOre, LapisOre, DiamondOre, EmeraldOre } from '../structures/Ores';
 import { OreVein } from '../structures/OreVein';
 
@@ -40,8 +40,14 @@ export function initializeWorldGeneration(seed: string): {
   // Create structure manager and register structures
   const structureManager = new StructureManager(worldGenerator);
 
-  // Register surface structures
-  structureManager.registerStructure(new OakTree());
+  // Register surface structures (trees and plants)
+  structureManager.registerStructure(new OakTree(biomeManager));
+  structureManager.registerStructure(new BirchTree(biomeManager));
+  structureManager.registerStructure(new SpruceTree(biomeManager));
+  structureManager.registerStructure(new AcaciaTree(biomeManager));
+  structureManager.registerStructure(new JungleTree(biomeManager));
+  structureManager.registerStructure(new DarkOakTree(biomeManager));
+  structureManager.registerStructure(new CactusPlant(biomeManager));
   // Register more surface structures as needed
 
   // Register ore structures
