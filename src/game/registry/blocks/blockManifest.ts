@@ -35,6 +35,16 @@ import { JunglePlanks } from './JunglePlanks';
 import { CopperOre } from './CopperOre';
 import { RedstoneOre } from './RedstoneOre';
 import { LapisOre } from './LapisOre';
+import { Sandstone } from './Sandstone';
+import { RedSand } from './RedSand';
+import { CoarseDirt } from './CoarseDirt';
+import { RootedDirt } from './RootedDirt';
+import { Podzol } from './Podzol';
+import { MossyCobblestone } from './MossyCobblestone';
+import { Andesite } from './Andesite';
+import { Granite } from './Granite';
+import { Deepslate } from './Deepslate';
+
 
 // Export all block classes in an array
 export const blockClasses = [
@@ -75,4 +85,13 @@ export const blockClasses = [
   CopperOre,
   RedstoneOre,
   LapisOre,
+  Sandstone,
+  RedSand,
+  CoarseDirt,
+  RootedDirt,
+  Podzol,
+  MossyCobblestone,
+  Andesite,
+  Granite,
+  Deepslate,
 ]; 

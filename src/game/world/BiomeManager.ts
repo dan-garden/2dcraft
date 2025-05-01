@@ -7,11 +7,19 @@ export class BiomeManager {
   private humidityNoise: (x: number, y: number) => number;
   private terrainDetailNoise: (x: number, y: number) => number;
   private biomeBoundaryNoise: (x: number, y: number) => number;
+  private rarityNoise: (x: number, y: number) => number;
   private biomeCache: Map<number, BaseBiome> = new Map();
   private readonly CHUNK_SIZE = 16;
 
   // Biome transition settings
   private readonly TRANSITION_SIZE = 8; // Number of blocks for transition
+
+  // Minimum biome width in chunks
+  private readonly MIN_BIOME_WIDTH = 3;
+
+  // Current biome continuity tracking
+  private currentBiome: BaseBiome | null = null;
+  private currentBiomeChunks = 0;
 
   constructor(private worldGenerator: WorldGenerator) {
     // Create noise functions for biome parameters
@@ -19,9 +27,12 @@ export class BiomeManager {
     this.humidityNoise = worldGenerator.createNoiseFunction('humidity', 0.01);
     this.terrainDetailNoise = worldGenerator.createNoiseFunction('terrain_detail', 0.05);
     this.biomeBoundaryNoise = worldGenerator.createNoiseFunction('biome_boundary', 0.02);
+    this.rarityNoise = worldGenerator.createNoiseFunction('biome_rarity', 0.01);
   }
 
   registerBiome(biome: BaseBiome): void {
+    // Set the noise generator for this biome
+    biome.setNoiseGenerator((suffix, scale) => this.worldGenerator.createNoiseFunction(biome.id + '_' + suffix, scale || 1));
     this.biomes.push(biome);
   }
 
@@ -41,6 +52,14 @@ export class BiomeManager {
       return this.biomeCache.get(chunkX)!;
     }
 
+    // If we're enforcing minimum biome width and still have chunks to generate for current biome
+    if (this.currentBiome && this.currentBiomeChunks < this.MIN_BIOME_WIDTH) {
+      this.currentBiomeChunks++;
+      this.biomeCache.set(chunkX, this.currentBiome);
+      return this.currentBiome;
+    }
+
+    // Get climate parameters for this position
     const temperature = this.temperatureNoise(chunkCenterX, 0);
     const humidity = this.humidityNoise(chunkCenterX, 0);
 
@@ -49,21 +68,45 @@ export class BiomeManager {
     const adjustedTemperature = temperature + boundaryNoise;
     const adjustedHumidity = humidity + boundaryNoise;
 
-    // Find matching biomes based on temperature and humidity
+    // Get rarity noise for this position to affect biome selection
+    const rarityValue = this.rarityNoise(chunkCenterX, 0);
+
+    // Find all matching biomes based on temperature and humidity
     const matchingBiomes = this.biomes.filter(biome =>
       biome.isApplicable(adjustedTemperature, adjustedHumidity)
     );
 
-    // If there are matching biomes, use the first one
+    // Select a biome using rarity as a weighting factor
     let selectedBiome: BaseBiome;
+
     if (matchingBiomes.length > 0) {
-      selectedBiome = matchingBiomes[0];
+      // Use rarity to filter or weight biome selection
+      // Lower rarity value = more common
+      const weightedBiomes = matchingBiomes.filter(biome => {
+        // Compare the biome's rarity against our noise value
+        // This creates a random chance based on the rarity
+        return biome.rarity <= rarityValue + 0.5;
+      });
+
+      // If no biomes passed the rarity filter, fallback to all matching biomes
+      const finalCandidates = weightedBiomes.length > 0 ? weightedBiomes : matchingBiomes;
+
+      // Choose a random biome from the candidates
+      const randomIndex = Math.floor(this.worldGenerator.createNoiseFunction(
+        'biome_selection_' + chunkX, 1)(0, 0) * finalCandidates.length);
+      selectedBiome = finalCandidates[Math.min(randomIndex, finalCandidates.length - 1)];
     } else if (this.biomes.length > 0) {
-      // If no biome matches, use the first registered biome as default
-      selectedBiome = this.biomes[0];
+      // If no biome matches, randomly select one from all biomes
+      const randomIndex = Math.floor(this.worldGenerator.createNoiseFunction(
+        'biome_fallback_' + chunkX, 1)(0, 0) * this.biomes.length);
+      selectedBiome = this.biomes[Math.min(randomIndex, this.biomes.length - 1)];
     } else {
       throw new Error("No biomes registered with BiomeManager");
     }
+
+    // Reset the biome continuity counter to ensure minimum width
+    this.currentBiome = selectedBiome;
+    this.currentBiomeChunks = 1;
 
     // Cache the result for this chunk
     this.biomeCache.set(chunkX, selectedBiome);
@@ -140,13 +183,15 @@ export class BiomeManager {
       return 'air';
     }
 
-    // Get appropriate block from biome layers
-    return biome.getBlockAtDepth(depth);
+    // Use the biome's new getBlockAt method for noise-based generation
+    return biome.getBlockAt(x, y, depth);
   }
 
   // Clear the biome cache (useful when changing world generation parameters)
   clearCache(): void {
     this.biomeCache.clear();
+    this.currentBiome = null;
+    this.currentBiomeChunks = 0;
   }
 
   // Get all registered biomes

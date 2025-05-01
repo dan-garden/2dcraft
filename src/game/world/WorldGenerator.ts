@@ -10,24 +10,14 @@ export interface OreSettings {
   maxY: number;
 }
 
-export interface BlockGenerationRule {
-  id: string;
-  name: string;
-  priority: number; // Higher priority rules are evaluated first
-  condition: (x: number, y: number, generator: WorldGenerator) => boolean;
-}
-
 export class WorldGenerator {
   private noise: (x: number, y: number) => number;
   private noise2: (x: number, y: number) => number;
   private noise3: (x: number, y: number) => number;
   private oreNoise: (x: number, y: number) => number;
   private ores: OreSettings[] = [];
-  private generationRules: BlockGenerationRule[] = [];
   private seed: string;
 
-  // This property can be set by biome generators to dynamically change the block ID
-  public currentBlockId: string = '';
   // Optional reference to a biome generator for height modifications
   private biomeGenerator: { modifyHeight: (x: number, baseHeight: number) => number } | null = null;
 
@@ -38,9 +28,6 @@ export class WorldGenerator {
     this.noise2 = createNoise2D(alea(seed + '2'));
     this.noise3 = createNoise2D(alea(seed + '3'));
     this.oreNoise = createNoise2D(alea(seed + 'ores'));
-
-    // Register default generation rules
-    this.registerDefaultRules();
   }
 
   // Set the biome generator for this world
@@ -53,73 +40,8 @@ export class WorldGenerator {
     this.biomeGenerator = biomeManager;
   }
 
-  private registerDefaultRules(): void {
-    // Air rule
-    this.registerGenerationRule({
-      id: 'air',
-      name: 'air',
-      priority: 100,
-      condition: (x, y, generator) => y > generator.getHeightAt(x)
-    });
-
-    // Grass rule (surface only)
-    this.registerGenerationRule({
-      id: 'grass',
-      name: 'grass',
-      priority: 90,
-      condition: (x, y, generator) => {
-        const height = generator.getHeightAt(x);
-        return y === Math.floor(height);
-      }
-    });
-
-    // Dirt rule (few blocks below surface)
-    this.registerGenerationRule({
-      id: 'dirt',
-      name: 'dirt',
-      priority: 80,
-      condition: (x, y, generator) => {
-        const height = generator.getHeightAt(x);
-        return y <= Math.floor(height) && y > height - 4;
-      }
-    });
-
-    // Dirt patches in stone
-    this.registerGenerationRule({
-      id: 'dirt',
-      name: 'dirt_patches',
-      priority: 60,
-      condition: (x, y, generator) => {
-        const dirtNoiseFactor = this.noise2(x / 20, y / 20);
-        return dirtNoiseFactor > 0.5 && this.noise3(x / 8, y / 8) > 0.4;
-      }
-    });
-
-    // Stone is the default block, will be used if no other rules match
-    this.registerGenerationRule({
-      id: 'stone',
-      name: 'stone',
-      priority: 0, // Lowest priority as it's the default
-      condition: () => true
-    });
-  }
-
   registerOre(ore: OreSettings): void {
     this.ores.push(ore);
-
-    // Register a generation rule for this ore
-    this.registerGenerationRule({
-      id: ore.id,
-      name: `ore_${ore.id}`,
-      priority: 70, // Ore rules have priority between dirt and dirt patches
-      condition: (x, y) => this.checkOreGeneration(x, y, ore)
-    });
-  }
-
-  registerGenerationRule(rule: BlockGenerationRule): void {
-    this.generationRules.push(rule);
-    // Sort rules by priority (highest first)
-    this.generationRules.sort((a, b) => b.priority - a.priority);
   }
 
   getHeightAt(x: number): number {
@@ -154,24 +76,11 @@ export class WorldGenerator {
     return baseHeight;
   }
 
-  getTile(x: number, y: number): string {
-    // Apply the first matching generation rule
-    for (const rule of this.generationRules) {
-      // Reset the current block ID before checking each rule
-      this.currentBlockId = rule.id;
-
-      if (rule.condition(x, y, this)) {
-        // If the rule condition is true, return either the rule's ID
-        // or the dynamically set currentBlockId (if it was changed by the rule)
-        return this.currentBlockId;
-      }
-    }
-
-    // Default fallback (though we should never reach here due to the default stone rule)
-    return 'stone';
-  }
-
-  private checkOreGeneration(x: number, y: number, ore: OreSettings): boolean {
+  /**
+   * Check if an ore should be generated at a specific position
+   * This is now called directly by StructureManager rather than through generation rules
+   */
+  checkOreGeneration(x: number, y: number, ore: OreSettings): boolean {
     // Check if we're in the correct y-level range for this ore
     if (y >= ore.minY && y <= ore.maxY) {
       // First check if this block is surrounded by air (cave check)

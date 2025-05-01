@@ -189,8 +189,9 @@ export function generateChunk(
     // Get the block at surface to ensure it's a valid placement
     const surfaceBlock = biomeManager.getBlockAt(worldX, structureY, structureY);
 
-    // Check for valid surface placement (e.g., on grass or sand but not water)
-    const isValidSurface = surfaceBlock === biome.surfaceBlock;
+    // Check for valid surface placement using biome's isValidStructureBlock method
+    // This allows each biome to specify its own valid foundation blocks for structures
+    const isValidSurface = biome.isValidStructureBlock(surfaceBlock);
 
     // Check if a structure should be generated here
     if (isValidSurface) {

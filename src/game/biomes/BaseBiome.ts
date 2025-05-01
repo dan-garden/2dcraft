@@ -1,3 +1,10 @@
+export interface BiomeLayer {
+  name: string;
+  getBlock: (x: number, y: number, depth: number, noise: (suffix: string, scale?: number) => (x: number, y: number) => number) => string;
+  minDepth: number;
+  maxDepth?: number; // If undefined, extends to infinity
+}
+
 export interface BiomeProps {
   id: string;
   name: string;
@@ -14,11 +21,12 @@ export interface BiomeProps {
   terrainVariability: number;
   // Peak frequency (0-1)
   peakFrequency: number;
-  // Block types
-  surfaceBlock: string;
-  subSurfaceBlock: string;
-  subsurfaceDepth: number;
-  stoneBlock: string;
+  // Layers configuration
+  layers: BiomeLayer[];
+  // Valid blocks for structure placement (optional)
+  validStructureBlocks?: string[];
+  // Rarity (0-1). Lower values are more common (default: 0.5)
+  rarity?: number;
 }
 
 export class BaseBiome {
@@ -37,11 +45,18 @@ export class BaseBiome {
   public readonly terrainVariability: number;
   public readonly peakFrequency: number;
 
-  // Block types
-  public readonly surfaceBlock: string;
-  public readonly subSurfaceBlock: string;
-  public readonly subsurfaceDepth: number;
-  public readonly stoneBlock: string;
+  // Layer configuration
+  public readonly layers: BiomeLayer[];
+
+  // Valid structure blocks
+  public readonly validStructureBlocks: string[];
+
+  // Biome rarity
+  public readonly rarity: number;
+
+  // Map to store noise functions for this biome
+  private noiseFunctions: Map<string, (x: number, y: number) => number> = new Map();
+  private noiseGenerator: ((suffix: string, scale?: number) => (x: number, y: number) => number) | null = null;
 
   constructor(props: BiomeProps) {
     this.id = props.id;
@@ -54,10 +69,49 @@ export class BaseBiome {
     this.heightAddition = props.heightAddition;
     this.terrainVariability = props.terrainVariability;
     this.peakFrequency = props.peakFrequency;
-    this.surfaceBlock = props.surfaceBlock;
-    this.subSurfaceBlock = props.subSurfaceBlock;
-    this.subsurfaceDepth = props.subsurfaceDepth;
-    this.stoneBlock = props.stoneBlock;
+    this.layers = props.layers;
+    this.rarity = props.rarity ?? 0.5; // Default rarity is 0.5
+
+    // Set default valid structure blocks if not provided
+    this.validStructureBlocks = props.validStructureBlocks || this.getDefaultValidStructureBlocks();
+  }
+
+  /**
+   * Get default valid structure blocks based on surface layer block types
+   * This is used if specific validStructureBlocks are not provided
+   */
+  private getDefaultValidStructureBlocks(): string[] {
+    // Default valid blocks that are suitable for structures in most biomes
+    return ['grass', 'dirt', 'sand', 'stone', 'gravel', 'clay', 'terracotta', 'podzol'];
+  }
+
+  /**
+   * Check if a block type is valid for placing structures in this biome
+   */
+  isValidStructureBlock(blockType: string): boolean {
+    return this.validStructureBlocks.includes(blockType);
+  }
+
+  /**
+   * Set the noise function generator from WorldGenerator
+   */
+  setNoiseGenerator(generator: (suffix: string, scale?: number) => (x: number, y: number) => number): void {
+    this.noiseGenerator = generator;
+  }
+
+  /**
+   * Get or create a noise function with the specified parameters
+   */
+  getNoise(suffix: string, scale: number = 1): (x: number, y: number) => number {
+    if (!this.noiseGenerator) {
+      throw new Error("Noise generator not set for biome " + this.id);
+    }
+
+    const key = `${suffix}_${scale}`;
+    if (!this.noiseFunctions.has(key)) {
+      this.noiseFunctions.set(key, this.noiseGenerator(this.id + '_' + suffix, scale));
+    }
+    return this.noiseFunctions.get(key)!;
   }
 
   /**
@@ -81,27 +135,39 @@ export class BaseBiome {
   }
 
   /**
-   * Get layers of blocks for this biome from top to bottom
-   * Each element is an object with block ID and thickness
+   * Get block at specified world coordinates and depth from surface
    */
-  getLayers(): Array<{ id: string, thickness: number }> {
-    return [
-      { id: this.surfaceBlock, thickness: 1 },
-      { id: this.subSurfaceBlock, thickness: this.subsurfaceDepth },
-      { id: this.stoneBlock, thickness: Infinity }
-    ];
+  getBlockAt(x: number, y: number, depth: number): string {
+    if (depth < 0) {
+      return 'air'; // Above surface
+    }
+
+    // Find the appropriate layer for this depth
+    for (const layer of this.layers) {
+      if (depth >= layer.minDepth && (layer.maxDepth === undefined || depth <= layer.maxDepth)) {
+        // If noise generator isn't set, use a simplified approach
+        if (!this.noiseGenerator) {
+          return layer.name; // Fallback to using layer name as block ID
+        }
+
+        // Otherwise use the noise-based block generation
+        return layer.getBlock(x, y, depth, (suffix, scale) => this.getNoise(suffix, scale));
+      }
+    }
+
+    // Fallback to stone if no layer matches
+    return 'stone';
   }
 
   /**
-   * Get block at specified depth from surface
+   * Get layers of blocks for this biome (simplified for compatibility)
    */
-  getBlockAtDepth(depth: number): string {
-    if (depth <= 0) {
-      return this.surfaceBlock;
-    } else if (depth <= this.subsurfaceDepth) {
-      return this.subSurfaceBlock;
-    } else {
-      return this.stoneBlock;
-    }
+  getLayers(): Array<{ id: string, thickness: number }> {
+    return this.layers.map(layer => {
+      return {
+        id: layer.name,
+        thickness: layer.maxDepth !== undefined ? layer.maxDepth - layer.minDepth : Infinity
+      };
+    });
   }
 } 
