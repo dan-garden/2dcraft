@@ -47,7 +47,7 @@ export function initializeWorldGeneration(seed: string): {
 
   Trees.forEach(tree => structureManager.registerStructure(new tree(biomeManager)));
   Ores.forEach(ore => structureManager.registerStructure(new ore(biomeManager)));
-  Caves.forEach(cave => structureManager.registerStructure(new cave(biomeManager)));
+  // Caves.forEach(cave => structureManager.registerStructure(new cave(biomeManager)));
 
   return {
     worldGenerator,

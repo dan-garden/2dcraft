@@ -48,6 +48,9 @@ import { Diorite } from './Diorite';
 import { Mud } from './Mud';
 import { Calcite } from './Calcite';
 import { Tuff } from './Tuff';
+import { DarkOakLeaves } from './DarkOakLeaves';
+import { DarkOakLog } from './DarkOakLog';
+import { DarkOakPlanks } from './DarkOakPlanks';
 
 
 // Export all block classes in an array
@@ -102,4 +105,7 @@ export const blockClasses = [
   Mud,
   Calcite,
   Tuff,
+  DarkOakLeaves,
+  DarkOakLog,
+  DarkOakPlanks,
 ]; 

@@ -112,10 +112,9 @@ export class JungleBiome extends BaseBiome {
           // Limestone/dripstone caves are common in jungle regions
           if (depth > 25 && limestoneValue > 0.85) {
             // Different limestone/calcium formations
-            const formationType = Math.floor(limestoneValue * 10) % 3;
+            const formationType = Math.floor(limestoneValue * 10) % 2;
             switch (formationType) {
-              case 0: return 'dripstone';
-              case 1: return 'calcite';
+              case 0: return 'calcite';
               default: return 'tuff';
             }
           }

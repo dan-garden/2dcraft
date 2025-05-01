@@ -75,29 +75,6 @@ export class DesertBiome extends BaseBiome {
         getBlock: (x, y, depth, getNoise) => {
           // Desert-specific stone variations
           const stoneVariationNoise = getNoise('stone_variation', 0.04);
-          const noiseValue = stoneVariationNoise(x, y);
-
-          // Occasional terracotta in deeper layers (distinctive feature of desert biomes)
-          if (depth > 20 && noiseValue > 0.8) {
-            // Use different noise values to determine terracotta color
-            const colorNoise = getNoise('terracotta_color', 0.02)(x, y + 1000);
-            const colorIndex = Math.floor(colorNoise * 6);
-
-            // Different terracotta colors
-            switch (colorIndex) {
-              case 0: return 'terracotta';
-              case 1: return 'orange_terracotta';
-              case 2: return 'yellow_terracotta';
-              case 3: return 'brown_terracotta';
-              case 4: return 'red_terracotta';
-              default: return 'white_terracotta';
-            }
-          }
-
-          // Bedrock at the very bottom
-          if (depth > 60 && stoneVariationNoise(x, y + 500) > 0.9) {
-            return 'bedrock';
-          }
 
           // Default stone
           return 'stone';
