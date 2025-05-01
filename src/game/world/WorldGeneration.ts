@@ -12,6 +12,7 @@ import { SwampBiome } from '../biomes/SwampBiome';
 import { OakTree, BirchTree, SpruceTree, AcaciaTree, JungleTree, DarkOakTree, CactusPlant } from '../structures/Trees';
 import { CoalOre, IronOre, CopperOre, GoldOre, RedstoneOre, LapisOre, DiamondOre, EmeraldOre } from '../structures/Ores';
 import { OreVein } from '../structures/OreVein';
+import { JungleBiome } from '../biomes/JungleBiome';
 
 /**
  * Sets up a complete world generation system with biomes and structures
@@ -32,6 +33,7 @@ export function initializeWorldGeneration(seed: string): {
   biomeManager.registerBiome(new DesertBiome());
   biomeManager.registerBiome(new ForestBiome());
   biomeManager.registerBiome(new SwampBiome());
+  biomeManager.registerBiome(new JungleBiome());
   // Add more biomes as needed
 
   // Set biome manager for height modifications

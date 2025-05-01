@@ -44,6 +44,10 @@ import { MossyCobblestone } from './MossyCobblestone';
 import { Andesite } from './Andesite';
 import { Granite } from './Granite';
 import { Deepslate } from './Deepslate';
+import { Diorite } from './Diorite';
+import { Mud } from './Mud';
+import { Calcite } from './Calcite';
+import { Tuff } from './Tuff';
 
 
 // Export all block classes in an array
@@ -94,4 +98,8 @@ export const blockClasses = [
   Andesite,
   Granite,
   Deepslate,
+  Diorite,
+  Mud,
+  Calcite,
+  Tuff,
 ]; 

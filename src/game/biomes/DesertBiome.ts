@@ -11,19 +11,8 @@ export class DesertBiome extends BaseBiome {
         maxDepth: 1,
         getBlock: (x, y, depth, getNoise) => {
           // Create noise functions for desert surface features
-          const featureNoise = getNoise('surface_features', 0.15);
           const colorVariationNoise = getNoise('sand_color', 0.05);
-
-          // Get noise values at this position
-          const featureValue = featureNoise(x, y);
           const colorValue = colorVariationNoise(x, y);
-
-          // Occasional dead bushes or cacti (very rare)
-          if (featureValue > 0.92) {
-            return 'dead_bush';
-          } else if (featureValue > 0.97) {
-            return 'cactus';
-          }
 
           // Different sand colors based on position (subtle variations)
           if (colorValue > 0.7) {

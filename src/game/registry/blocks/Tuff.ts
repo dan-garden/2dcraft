@@ -1,10 +1,10 @@
 import { Block } from '../../blocks/Block';
 
-export class Stone extends Block {
-  readonly id = 'stone';
-  readonly name = 'Stone';
+export class Tuff extends Block {
+  readonly id = 'tuff';
+  readonly name = 'Tuff';
   readonly color = 0x777777; // Light Gray
   readonly isSolid = true;
-  readonly texturePath = './textures/blocks/stone.png';
+  readonly texturePath = './textures/blocks/tuff.png';
   readonly tinted = false;
 } 
