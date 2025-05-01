@@ -2,6 +2,7 @@ import { WorldGenerator } from './WorldGenerator';
 import { BaseStructure } from '../structures/BaseStructure';
 import { OreVein } from '../structures/OreVein';
 import { PatternStructure } from '../structures/PatternStructure';
+import { Cave } from '../structures/Cave';
 
 export class StructureManager {
   private structures: BaseStructure[] = [];
@@ -9,6 +10,7 @@ export class StructureManager {
   private structurePositions: Map<string, { x: number, y: number }[]> = new Map();
   private structureNoise: (x: number) => number;
   private oreNoise: (x: number, y: number) => number;
+  private caveNoise: (x: number, y: number) => number;
   private readonly chunkSize = 16;
 
   constructor(private worldGenerator: WorldGenerator) {
@@ -16,6 +18,7 @@ export class StructureManager {
     const noiseFn = this.worldGenerator.createNoiseFunction('structures', 0.01);
     this.structureNoise = (x: number) => (noiseFn(x, 0) + 1) / 2; // Map to 0-1 range
     this.oreNoise = this.worldGenerator.createNoiseFunction('ores', 0.05);
+    this.caveNoise = this.worldGenerator.createNoiseFunction('caves', 0.03);
   }
 
   registerStructure(structure: BaseStructure): void {
@@ -151,6 +154,48 @@ export class StructureManager {
   }
 
   /**
+   * Check if a cave should be generated at the given position
+   */
+  getCaveAt(x: number, y: number, biomeId: string): Cave | null {
+    // Use a different noise pattern for caves to avoid grid-like patterns
+    const positionCheckNoise = this.caveNoise(x / 10, y / 10);
+    // Increase the threshold to make caves less frequent
+    if (positionCheckNoise > 0.7) {
+      return null;
+    }
+
+    // Further reduce cave frequency with depth-based probability
+    if (y > -40) {
+      // Near surface - reduce frequency
+      const depthFactor = 0.8 - (Math.abs(y) / 50);
+      if (Math.random() < depthFactor) {
+        return null;
+      }
+    }
+
+    for (const structure of this.structures) {
+      // Only process cave structures
+      if (!(structure instanceof Cave)) continue;
+
+      // Create a noise-based check function for this position
+      const caveCheckNoise = (xPos: number) => {
+        // Use a mix of noise functions for more natural cave distribution
+        const noise1 = this.structureNoise(x + y * 50 + xPos);
+        const noise2 = this.caveNoise(x / 40, y / 40);
+        // Reduce the overall noise value to make caves less frequent
+        return (noise1 * 0.6 + noise2 * 0.4) * 0.7;
+      };
+
+      // Check if a cave can generate here
+      if (structure.canGenerateAt(x, y, biomeId, caveCheckNoise)) {
+        return structure as Cave;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Generate a structure at the given position
    */
   generateStructureAt(
@@ -160,12 +205,12 @@ export class StructureManager {
     setBlockFn: (x: number, y: number, blockId: string) => void,
     getBlockFn?: (x: number, y: number) => string
   ): void {
-    if (structure instanceof OreVein) {
-      // Ore veins need the block-checking function
+    if (structure instanceof OreVein || structure instanceof Cave) {
+      // Ore veins and caves need the block-checking function
       if (getBlockFn) {
         structure.generateAt(x, y, setBlockFn, getBlockFn);
       } else {
-        console.error("Block check function required for ore vein generation");
+        console.error("Block check function required for ore vein or cave generation");
       }
     } else {
       // Other structures don't need the getBlockFn

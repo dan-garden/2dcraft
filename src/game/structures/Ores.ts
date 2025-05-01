@@ -1,7 +1,7 @@
 import { OreVein } from './OreVein';
 import { BiomeManager } from '../world/BiomeManager';
 
-export class CoalOre extends OreVein {
+class CoalOre extends OreVein {
   constructor(biomeManager?: BiomeManager) {
     super({
       id: 'coal_ore',
@@ -19,7 +19,7 @@ export class CoalOre extends OreVein {
   }
 }
 
-export class CopperOre extends OreVein {
+class CopperOre extends OreVein {
   constructor(biomeManager?: BiomeManager) {
     super({
       id: 'copper_ore',
@@ -37,7 +37,7 @@ export class CopperOre extends OreVein {
   }
 }
 
-export class DiamondOre extends OreVein {
+class DiamondOre extends OreVein {
   constructor(biomeManager?: BiomeManager) {
     super({
       id: 'diamond_ore',
@@ -55,7 +55,7 @@ export class DiamondOre extends OreVein {
   }
 }
 
-export class EmeraldOre extends OreVein {
+class EmeraldOre extends OreVein {
   constructor(biomeManager?: BiomeManager) {
     super({
       id: 'emerald_ore',
@@ -73,7 +73,7 @@ export class EmeraldOre extends OreVein {
   }
 }
 
-export class GoldOre extends OreVein {
+class GoldOre extends OreVein {
   constructor(biomeManager?: BiomeManager) {
     super({
       id: 'gold_ore',
@@ -91,7 +91,7 @@ export class GoldOre extends OreVein {
   }
 }
 
-export class IronOre extends OreVein {
+class IronOre extends OreVein {
   constructor(biomeManager?: BiomeManager) {
     super({
       id: 'iron_ore',
@@ -109,7 +109,7 @@ export class IronOre extends OreVein {
   }
 }
 
-export class LapisOre extends OreVein {
+class LapisOre extends OreVein {
   constructor(biomeManager?: BiomeManager) {
     super({
       id: 'lapis_ore',
@@ -127,7 +127,7 @@ export class LapisOre extends OreVein {
   }
 }
 
-export class RedstoneOre extends OreVein {
+class RedstoneOre extends OreVein {
   constructor(biomeManager?: BiomeManager) {
     super({
       id: 'redstone_ore',
@@ -143,4 +143,18 @@ export class RedstoneOre extends OreVein {
       biomeManager: biomeManager
     });
   }
-} 
+}
+
+
+const Ores = [
+  CoalOre,
+  CopperOre,
+  DiamondOre,
+  EmeraldOre,
+  GoldOre,
+  IronOre,
+  LapisOre,
+  RedstoneOre,
+];
+
+export default Ores;

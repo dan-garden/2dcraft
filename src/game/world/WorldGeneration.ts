@@ -7,12 +7,15 @@ import { PlainsBiome } from '../biomes/PlainsBiome';
 import { DesertBiome } from '../biomes/DesertBiome';
 import { ForestBiome } from '../biomes/ForestBiome';
 import { SwampBiome } from '../biomes/SwampBiome';
-
-// Structure imports
-import { OakTree, BirchTree, SpruceTree, AcaciaTree, JungleTree, DarkOakTree, CactusPlant } from '../structures/Trees';
-import { CoalOre, IronOre, CopperOre, GoldOre, RedstoneOre, LapisOre, DiamondOre, EmeraldOre } from '../structures/Ores';
 import { OreVein } from '../structures/OreVein';
 import { JungleBiome } from '../biomes/JungleBiome';
+import { Cave } from '../structures/Cave';
+
+// Structure imports
+import Trees from '../structures/Trees';
+import Ores from '../structures/Ores';
+import Caves from '../structures/Caves';
+
 
 /**
  * Sets up a complete world generation system with biomes and structures
@@ -42,26 +45,9 @@ export function initializeWorldGeneration(seed: string): {
   // Create structure manager and register structures
   const structureManager = new StructureManager(worldGenerator);
 
-  // Register surface structures (trees and plants)
-  structureManager.registerStructure(new OakTree(biomeManager));
-  structureManager.registerStructure(new BirchTree(biomeManager));
-  structureManager.registerStructure(new SpruceTree(biomeManager));
-  structureManager.registerStructure(new AcaciaTree(biomeManager));
-  structureManager.registerStructure(new JungleTree(biomeManager));
-  structureManager.registerStructure(new DarkOakTree(biomeManager));
-  structureManager.registerStructure(new CactusPlant(biomeManager));
-  // Register more surface structures as needed
-
-  // Register ore structures
-  structureManager.registerStructure(new CoalOre(biomeManager));
-  structureManager.registerStructure(new IronOre(biomeManager));
-  structureManager.registerStructure(new CopperOre(biomeManager));
-  structureManager.registerStructure(new GoldOre(biomeManager));
-  structureManager.registerStructure(new RedstoneOre(biomeManager));
-  structureManager.registerStructure(new LapisOre(biomeManager));
-  structureManager.registerStructure(new DiamondOre(biomeManager));
-  structureManager.registerStructure(new EmeraldOre(biomeManager));
-  // Register more ore types as needed
+  Trees.forEach(tree => structureManager.registerStructure(new tree(biomeManager)));
+  Ores.forEach(ore => structureManager.registerStructure(new ore(biomeManager)));
+  Caves.forEach(cave => structureManager.registerStructure(new cave(biomeManager)));
 
   return {
     worldGenerator,
@@ -122,6 +108,9 @@ export function generateChunk(
   // Also clear the ore vein cache for this chunk
   OreVein.clearVeinCacheForChunk(chunkX);
 
+  // Clear the cave cache for this chunk
+  Cave.clearCaveCacheForChunk(chunkX);
+
   // First pass: Generate base terrain and biome blocks
   // For each column in the chunk, first calculate the surface height
   const surfaceHeights = new Array(chunkWidth);
@@ -149,7 +138,37 @@ export function generateChunk(
     }
   }
 
-  // Second pass: Generate ores
+  // Second pass: Generate caves (before ores to allow ores to replace cave walls)
+  // Use a different check interval for caves to create larger formations
+  const CAVE_CHECK_INTERVAL = 8; // Increased interval for less frequent caves
+
+  for (let localX = 0; localX < chunkWidth; localX += CAVE_CHECK_INTERVAL) {
+    // Offset the y checks to create a more natural pattern
+    const yOffset = Math.floor(worldGenerator.createNoiseFunction('cave_offset', 0.3)(chunkX * chunkWidth + localX, 0) * 8);
+
+    for (let localY = (yOffset % CAVE_CHECK_INTERVAL); localY < chunkHeight; localY += CAVE_CHECK_INTERVAL) {
+      // Add significant position variation to avoid grid-like cave patterns
+      const jitterX = Math.floor(worldGenerator.createNoiseFunction('cave_jitter_x', 0.5)(localX, localY) * 5) - 2;
+      const jitterY = Math.floor(worldGenerator.createNoiseFunction('cave_jitter_y', 0.5)(localX, localY) * 5) - 2;
+
+      const worldX = chunkX * chunkWidth + localX + jitterX;
+      const worldY = chunkY * chunkHeight + localY + jitterY;
+
+      // Get the biome at this position
+      const biome = biomeManager.getBiomeAt(worldX, 0);
+
+      // Random chance to skip this point altogether, making caves more sparse
+      if (Math.random() < 0.6) continue;
+
+      // Check if a cave should be generated here
+      const cave = structureManager.getCaveAt(worldX, worldY, biome.id);
+      if (cave) {
+        structureManager.generateStructureAt(worldX, worldY, cave, setBlock, getBlock);
+      }
+    }
+  }
+
+  // Third pass: Generate ores
   // Check for ore generation with a more natural, randomized pattern
   const ORE_CHECK_INTERVAL = 2; // Reduced for more samples
 
@@ -177,7 +196,7 @@ export function generateChunk(
     }
   }
 
-  // Third pass: Generate surface structures
+  // Fourth pass: Generate surface structures
   // Only check for structures at fixed intervals for efficiency
   const STRUCTURE_CHECK_INTERVAL = 3; // Increased interval for more spaced-out structures
 

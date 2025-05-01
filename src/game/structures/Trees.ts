@@ -1,7 +1,7 @@
 import { PatternStructure } from './PatternStructure';
 import { BiomeManager } from '../world/BiomeManager';
 
-export class OakTree extends PatternStructure {
+class OakTree extends PatternStructure {
   constructor(biomeManager?: BiomeManager) {
     // Get all biome IDs if biomeManager is provided
     let validBiomes = ['plains', 'forest'];
@@ -32,7 +32,7 @@ export class OakTree extends PatternStructure {
   }
 }
 
-export class BirchTree extends PatternStructure {
+class BirchTree extends PatternStructure {
   constructor(biomeManager?: BiomeManager) {
     let validBiomes = ['forest'];
     if (biomeManager) {
@@ -62,7 +62,7 @@ export class BirchTree extends PatternStructure {
   }
 }
 
-export class SpruceTree extends PatternStructure {
+class SpruceTree extends PatternStructure {
   constructor(biomeManager?: BiomeManager) {
     let validBiomes = ['forest', 'snowy_mountains'];
     if (biomeManager) {
@@ -93,7 +93,7 @@ export class SpruceTree extends PatternStructure {
   }
 }
 
-export class AcaciaTree extends PatternStructure {
+class AcaciaTree extends PatternStructure {
   constructor(biomeManager?: BiomeManager) {
     let validBiomes = ['savanna'];
     if (biomeManager) {
@@ -123,7 +123,7 @@ export class AcaciaTree extends PatternStructure {
   }
 }
 
-export class JungleTree extends PatternStructure {
+class JungleTree extends PatternStructure {
   constructor(biomeManager?: BiomeManager) {
     let validBiomes = ['jungle'];
     if (biomeManager) {
@@ -155,7 +155,7 @@ export class JungleTree extends PatternStructure {
   }
 }
 
-export class DarkOakTree extends PatternStructure {
+class DarkOakTree extends PatternStructure {
   constructor(biomeManager?: BiomeManager) {
     let validBiomes = ['dark_forest'];
     if (biomeManager) {
@@ -184,7 +184,7 @@ export class DarkOakTree extends PatternStructure {
   }
 }
 
-export class CactusPlant extends PatternStructure {
+class CactusPlant extends PatternStructure {
   constructor(biomeManager?: BiomeManager) {
     let validBiomes = ['desert'];
     if (biomeManager) {
@@ -207,4 +207,16 @@ export class CactusPlant extends PatternStructure {
       ]
     });
   }
-} 
+}
+
+const Trees = [
+  OakTree,
+  BirchTree,
+  SpruceTree,
+  AcaciaTree,
+  JungleTree,
+  DarkOakTree,
+  CactusPlant,
+];
+
+export default Trees;
