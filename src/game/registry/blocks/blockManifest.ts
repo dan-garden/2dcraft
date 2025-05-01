@@ -51,7 +51,14 @@ import { Tuff } from './Tuff';
 import { DarkOakLeaves } from './DarkOakLeaves';
 import { DarkOakLog } from './DarkOakLog';
 import { DarkOakPlanks } from './DarkOakPlanks';
-
+import { AcaciaLeaves } from './AcaciaLeaves';
+import { AcaciaLog } from './AcaciaLog';
+import { AcaciaPlanks } from './AcaciaPlanks';
+import { RedMushroomBlock } from './RedMushroomBlock';
+import { BrownMushroomBlock } from './BrownMushroomBlock';
+import { MushroomStem } from './MushroomStem';
+import { ShroomLight } from './ShroomLight';
+import { PackedIce } from './PackedIce';
 
 // Export all block classes in an array
 export const blockClasses = [
@@ -108,4 +115,12 @@ export const blockClasses = [
   DarkOakLeaves,
   DarkOakLog,
   DarkOakPlanks,
+  AcaciaLeaves,
+  AcaciaLog,
+  AcaciaPlanks,
+  RedMushroomBlock,
+  BrownMushroomBlock,
+  MushroomStem,
+  ShroomLight,
+  PackedIce,
 ]; 

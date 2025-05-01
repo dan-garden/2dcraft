@@ -15,6 +15,10 @@ import { Cave } from '../structures/Cave';
 import Trees from '../structures/Trees';
 import Ores from '../structures/Ores';
 import Caves from '../structures/Caves';
+import { TaigaBiome } from '../biomes/TaigaBiome';
+import { SavannaBiome } from '../biomes/SavannaBiome';
+import { BadlandsBiome } from '../biomes/BadlandsBiome';
+import { MushroomBiome } from '../biomes/MushroomBiome';
 
 
 /**
@@ -37,7 +41,10 @@ export function initializeWorldGeneration(seed: string): {
   biomeManager.registerBiome(new ForestBiome());
   biomeManager.registerBiome(new SwampBiome());
   biomeManager.registerBiome(new JungleBiome());
-  // Add more biomes as needed
+  biomeManager.registerBiome(new TaigaBiome());
+  biomeManager.registerBiome(new SavannaBiome());
+  biomeManager.registerBiome(new BadlandsBiome());
+  biomeManager.registerBiome(new MushroomBiome());
 
   // Set biome manager for height modifications
   worldGenerator.setBiomeManager(biomeManager);

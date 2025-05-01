@@ -19,6 +19,14 @@ export interface FlyModeToggleEvent {
   enabled: boolean;
 }
 
+export interface CameraModeToggleEvent {
+  isPerspective: boolean;
+}
+
+export interface FreeCameraToggleEvent {
+  enabled: boolean;
+}
+
 // Define key binding action types
 type KeyAction =
   | 'moveUp'
@@ -29,6 +37,12 @@ type KeyAction =
   | 'toggleFly'
   | 'toggleBlockSelector'
   | 'toggleInventory'
+  | 'toggleCameraMode'
+  | 'toggleFreeCamera'
+  | 'cameraTiltUp'
+  | 'cameraTiltDown'
+  | 'cameraZoomIn'
+  | 'cameraZoomOut'
   | 'hotbar1'
   | 'hotbar2'
   | 'hotbar3'
@@ -68,6 +82,12 @@ export class InputController {
     'f': 'toggleFly',
     'h': 'toggleBlockSelector',
     'e': 'toggleInventory',
+    'v': 'toggleCameraMode',
+    'c': 'toggleFreeCamera',
+    'q': 'cameraTiltUp',
+    'z': 'cameraTiltDown',
+    'r': 'cameraZoomIn',
+    't': 'cameraZoomOut',
     '1': 'hotbar1',
     '2': 'hotbar2',
     '3': 'hotbar3',
@@ -96,6 +116,8 @@ export class InputController {
   private blockInteractionCallbacks: ((event: BlockInteractionEvent) => void)[] = [];
   private debugToggleCallbacks: ((event: DebugToggleEvent) => void)[] = [];
   private flyModeToggleCallbacks: ((event: FlyModeToggleEvent) => void)[] = [];
+  private cameraModeToggleCallbacks: ((event: CameraModeToggleEvent) => void)[] = [];
+  private freeCameraToggleCallbacks: ((event: FreeCameraToggleEvent) => void)[] = [];
   private hotbarSelectionCallbacks: ((index: number) => void)[] = [];
   private hotbarScrollCallbacks: ((direction: number) => void)[] = [];
 
@@ -178,7 +200,7 @@ export class InputController {
       switch (action) {
         // Toggle actions (process on key press only)
         case 'toggleFly':
-          if (this.player) {
+          if (this.player && !this.isFreeCameraEnabled()) {
             const flyMode = this.player.isFlyModeEnabled();
             this.flyModeToggleCallbacks.forEach(callback => {
               callback({ enabled: !flyMode });
@@ -195,6 +217,26 @@ export class InputController {
           if (this.player) {
             const inventory = this.player.getInventory();
             inventory.toggleInventory();
+          }
+          break;
+
+        case 'toggleCameraMode':
+          if (this.cameraController) {
+            const isPerspective = this.cameraController.toggleCameraMode();
+            this.cameraModeToggleCallbacks.forEach(callback => {
+              callback({ isPerspective });
+            });
+            console.log(`Camera perspective mode: ${isPerspective ? 'enabled' : 'disabled'}`);
+          }
+          break;
+
+        case 'toggleFreeCamera':
+          if (this.cameraController) {
+            const isEnabled = this.cameraController.toggleFreeCamera();
+            this.freeCameraToggleCallbacks.forEach(callback => {
+              callback({ enabled: isEnabled });
+            });
+            console.log(`Free camera mode: ${isEnabled ? 'enabled' : 'disabled'}`);
           }
           break;
 
@@ -348,7 +390,7 @@ export class InputController {
    * Process block interactions while dragging the mouse
    */
   private processDragInteraction() {
-    if (!this.hoverBlock) return;
+    if (!this.hoverBlock || this.isFreeCameraEnabled()) return;
 
     // Check if this is a new block (different from the last one we interacted with)
     const isSameBlock = this.lastInteractedBlock &&
@@ -540,7 +582,7 @@ export class InputController {
    * Process mouse clicks on blocks
    */
   private processClick() {
-    if (!this.hoverBlock || !this.world || !this.player) return;
+    if (!this.hoverBlock || !this.world || !this.player || this.isFreeCameraEnabled()) return;
 
     const { x, y } = this.hoverBlock;
     const playerPos = this.player.getPosition();
@@ -606,6 +648,20 @@ export class InputController {
   }
 
   /**
+   * Register a callback for camera mode toggling
+   */
+  onCameraModeToggle(callback: (event: CameraModeToggleEvent) => void) {
+    this.cameraModeToggleCallbacks.push(callback);
+  }
+
+  /**
+   * Register a callback for free camera mode toggling
+   */
+  onFreeCameraToggle(callback: (event: FreeCameraToggleEvent) => void) {
+    this.freeCameraToggleCallbacks.push(callback);
+  }
+
+  /**
    * Register a callback for hotbar selection
    */
   onHotbarSelection(callback: (index: number) => void) {
@@ -620,10 +676,33 @@ export class InputController {
   }
 
   /**
+   * Check if free camera mode is enabled
+   */
+  isFreeCameraEnabled(): boolean {
+    return this.cameraController ? this.cameraController.isFreeCameraEnabled() : false;
+  }
+
+  /**
    * Get the current movement key states
+   * Returns different keys based on if we're in free camera mode
    */
   getKeys(): { [key: string]: boolean } {
-    // Return movement keys based on mapped actions rather than direct key access
+    // If in free camera mode, pass camera control keys
+    if (this.isFreeCameraEnabled()) {
+      return {
+        w: this.keyState['w'] || this.keyState['arrowup'] || false,
+        a: this.keyState['a'] || this.keyState['arrowleft'] || false,
+        s: this.keyState['s'] || this.keyState['arrowdown'] || false,
+        d: this.keyState['d'] || this.keyState['arrowright'] || false,
+        q: this.keyState['q'] || false,
+        z: this.keyState['z'] || false,
+        r: this.keyState['r'] || false,
+        t: this.keyState['t'] || false,
+        space: this.keyState[' '] || false
+      };
+    }
+
+    // Otherwise, return movement keys based on mapped actions
     return {
       w: this.isActionActive('moveUp'),
       a: this.isActionActive('moveLeft'),
@@ -710,7 +789,7 @@ export class InputController {
       this.updateHoverBlock();
 
       // Process drag interactions if mouse button is held down
-      if (this.mouseState.left || this.mouseState.right) {
+      if ((this.mouseState.left || this.mouseState.right) && !this.isFreeCameraEnabled()) {
         this.processDragInteraction();
       }
     }
@@ -721,8 +800,9 @@ export class InputController {
    */
   update() {
     // Process click state changes
-    if (this.mouseState.left !== this.lastMouseState.left ||
-      this.mouseState.right !== this.lastMouseState.right) {
+    if ((this.mouseState.left !== this.lastMouseState.left ||
+      this.mouseState.right !== this.lastMouseState.right) &&
+      !this.isFreeCameraEnabled()) {
       this.processClick();
     }
 

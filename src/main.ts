@@ -118,6 +118,24 @@ inputController.onFlyModeToggle((event) => {
   player.handleFlyModeToggle(event.enabled);
 });
 
+// Register camera mode toggle
+inputController.onCameraModeToggle((event) => {
+  const modeText = event.isPerspective ? 'Perspective' : 'Orthographic';
+  console.log(`Camera mode switched to: ${modeText}`);
+
+  // Update fog based on camera mode
+  if (event.isPerspective) {
+    scene.fog = new THREE.Fog(0x9FDFFF, 40, 120); // Add fog in perspective mode
+  } else {
+    scene.fog = null; // Remove fog in orthographic mode
+  }
+});
+
+// Register free camera mode toggle
+inputController.onFreeCameraToggle((event) => {
+  console.log(`Free camera mode: ${event.enabled ? 'enabled' : 'disabled'}`);
+});
+
 // Register hotbar selection callbacks
 inputController.onHotbarSelection((index) => {
   player.handleHotbarSelection(index);
@@ -128,17 +146,43 @@ inputController.onHotbarScroll((direction) => {
   player.handleHotbarScroll(direction);
 });
 
+// Add onscreen controls help
+function createControlsHelp() {
+  const helpDiv = document.createElement('div');
+  helpDiv.style.position = 'fixed';
+  helpDiv.style.bottom = '10px';
+  helpDiv.style.left = '10px';
+  helpDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+  helpDiv.style.color = 'white';
+  helpDiv.style.padding = '10px';
+  helpDiv.style.borderRadius = '5px';
+  helpDiv.style.fontFamily = 'monospace';
+  helpDiv.style.fontSize = '12px';
+  helpDiv.style.pointerEvents = 'none'; // Don't capture mouse events
+  helpDiv.innerHTML = `
+    <strong>Camera Controls:</strong><br>
+    V - Toggle perspective/orthographic<br>
+    C - Toggle free camera mode<br>
+    WASD - Move camera (in free mode)<br>
+    Q/Z - Tilt camera up/down<br>
+    R/T - Zoom in/out<br>
+  `;
+  document.body.appendChild(helpDiv);
+}
+createControlsHelp();
+
 function animate(timestamp: number) {
   requestAnimationFrame(animate);
 
   // Update input controller first
   inputController.update();
 
-  // Update player physics and controls
-  player.update(world, inputController.getKeys());
-
-  // Handle walk over events
-  player.handleWalkOver(world);
+  // Update player physics and controls (only if not in free camera mode)
+  if (!inputController.isFreeCameraEnabled()) {
+    player.update(world, inputController.getKeys());
+    // Handle walk over events
+    player.handleWalkOver(world);
+  }
 
   // Update game tick system
   gameTick.update(timestamp);
@@ -146,11 +190,19 @@ function animate(timestamp: number) {
   // Get player position for camera to follow
   const playerPos = player.getPosition();
 
-  // Update camera to follow player
+  // Update camera to follow player (only if not in free camera mode)
   cameraController.setPosition(playerPos.x, playerPos.y);
 
-  // Update world chunks based on player position
-  world.update(playerPos.x, playerPos.y);
+  // Update camera with keyboard input (especially for free camera mode)
+  cameraController.update(inputController.getKeys());
+
+  // Update world chunks based on camera position or player position
+  const cameraPos = cameraController.getPosition();
+  if (cameraController.isFreeCameraEnabled()) {
+    world.update(cameraPos.x, cameraPos.y);
+  } else {
+    world.update(playerPos.x, playerPos.y);
+  }
 
   // Get current chunks
   const chunks = world.getChunks();
@@ -176,13 +228,16 @@ function animate(timestamp: number) {
   // Get selected block from inventory
   const selectedBlock = player.getSelectedBlock();
 
+  // Get the current camera
+  const currentCamera = cameraController.getCurrentCamera();
+
   // Update debug info with camera, view, and biome information
   debugInfo.update(
     block.name,
     blockX,
     blockY,
     playerPos,
-    camera,
+    currentCamera,
     cameraController.getViewSize(),
     player.getVelocity(),
     player.isGrounded(),
@@ -198,10 +253,10 @@ function animate(timestamp: number) {
   }
 
   // Render with camera position and camera
-  instRenderer.render(world, cameraController.getPosition(), camera);
+  instRenderer.render(world, cameraController.getPosition(), currentCamera);
 
   // Final render of the scene
-  renderer.render(scene, camera);
+  renderer.render(scene, currentCamera);
 }
 
 // Start animation loop with timestamp

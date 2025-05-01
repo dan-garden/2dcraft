@@ -64,10 +64,10 @@ class BirchTree extends PatternStructure {
 
 class SpruceTree extends PatternStructure {
   constructor(biomeManager?: BiomeManager) {
-    let validBiomes = ['forest', 'snowy_mountains'];
+    let validBiomes = ['forest', 'snowy_mountains', 'taiga'];
     if (biomeManager) {
       validBiomes = biomeManager.getAllBiomes()
-        .filter(biome => ['forest', 'snowy_mountains'].includes(biome.id))
+        .filter(biome => ['forest', 'snowy_mountains', 'taiga'].includes(biome.id))
         .map(biome => biome.id);
     }
 
@@ -186,10 +186,10 @@ class DarkOakTree extends PatternStructure {
 
 class CactusPlant extends PatternStructure {
   constructor(biomeManager?: BiomeManager) {
-    let validBiomes = ['desert'];
+    let validBiomes = ['desert', 'badlands'];
     if (biomeManager) {
       validBiomes = biomeManager.getAllBiomes()
-        .filter(biome => ['desert'].includes(biome.id))
+        .filter(biome => ['desert', 'badlands'].includes(biome.id))
         .map(biome => biome.id);
     }
 
@@ -209,6 +209,322 @@ class CactusPlant extends PatternStructure {
   }
 }
 
+// New trees and structures for the new biomes
+
+class TallSpruceTree extends PatternStructure {
+  constructor(biomeManager?: BiomeManager) {
+    let validBiomes = ['taiga'];
+    if (biomeManager) {
+      validBiomes = biomeManager.getAllBiomes()
+        .filter(biome => ['taiga'].includes(biome.id))
+        .map(biome => biome.id);
+    }
+
+    super({
+      id: 'tall_spruce_tree',
+      name: 'Tall Spruce Tree',
+      rarity: 0.8,
+      minDistance: 6,
+      validBiomes: validBiomes,
+      yOffset: 0,
+      pattern: [
+        ['air', 'air', 'spruce_leaves', 'air', 'air'],
+        ['air', 'spruce_leaves', 'spruce_leaves', 'spruce_leaves', 'air'],
+        ['spruce_leaves', 'spruce_leaves', 'spruce_leaves', 'spruce_leaves', 'spruce_leaves'],
+        ['spruce_leaves', 'spruce_leaves', 'spruce_leaves', 'spruce_leaves', 'spruce_leaves'],
+        ['air', 'spruce_leaves', 'spruce_log', 'spruce_leaves', 'air'],
+        ['air', 'air', 'spruce_log', 'air', 'air'],
+        ['air', 'spruce_leaves', 'spruce_log', 'spruce_leaves', 'air'],
+        ['air', 'air', 'spruce_log', 'air', 'air'],
+        ['air', 'air', 'spruce_log', 'air', 'air'],
+        ['air', 'air', 'spruce_log', 'air', 'air'],
+        ['air', 'air', 'spruce_log', 'air', 'air'],
+        ['air', 'air', 'spruce_log', 'air', 'air']
+      ]
+    });
+  }
+}
+
+class SnowySpruceTree extends PatternStructure {
+  constructor(biomeManager?: BiomeManager) {
+    let validBiomes = ['taiga'];
+    if (biomeManager) {
+      validBiomes = biomeManager.getAllBiomes()
+        .filter(biome => ['taiga'].includes(biome.id))
+        .map(biome => biome.id);
+    }
+
+    super({
+      id: 'snowy_spruce_tree',
+      name: 'Snowy Spruce Tree',
+      rarity: 0.75,
+      minDistance: 5,
+      validBiomes: validBiomes,
+      yOffset: 0,
+      pattern: [
+        ['air', 'air', 'snow', 'air', 'air'],
+        ['air', 'snow', 'spruce_leaves', 'snow', 'air'],
+        ['snow', 'spruce_leaves', 'spruce_leaves', 'spruce_leaves', 'snow'],
+        ['air', 'spruce_leaves', 'spruce_log', 'spruce_leaves', 'air'],
+        ['air', 'air', 'spruce_log', 'air', 'air'],
+        ['air', 'air', 'spruce_log', 'air', 'air'],
+        ['air', 'air', 'spruce_log', 'air', 'air']
+      ]
+    });
+  }
+}
+
+class SwampWillowTree extends PatternStructure {
+  constructor(biomeManager?: BiomeManager) {
+    let validBiomes = ['swamp'];
+    if (biomeManager) {
+      validBiomes = biomeManager.getAllBiomes()
+        .filter(biome => ['swamp'].includes(biome.id))
+        .map(biome => biome.id);
+    }
+
+    super({
+      id: 'swamp_willow_tree',
+      name: 'Swamp Willow Tree',
+      rarity: 0.7,
+      minDistance: 6,
+      validBiomes: validBiomes,
+      yOffset: 0,
+      pattern: [
+        ['vine', 'oak_leaves', 'oak_leaves', 'oak_leaves', 'vine'],
+        ['oak_leaves', 'oak_leaves', 'oak_leaves', 'oak_leaves', 'oak_leaves'],
+        ['oak_leaves', 'vine', 'oak_log', 'vine', 'oak_leaves'],
+        ['air', 'air', 'oak_log', 'air', 'air'],
+        ['air', 'vine', 'oak_log', 'vine', 'air'],
+        ['air', 'air', 'oak_log', 'air', 'air'],
+        ['air', 'air', 'oak_log', 'air', 'air']
+      ]
+    });
+  }
+}
+
+class MangroveTree extends PatternStructure {
+  constructor(biomeManager?: BiomeManager) {
+    let validBiomes = ['swamp'];
+    if (biomeManager) {
+      validBiomes = biomeManager.getAllBiomes()
+        .filter(biome => ['swamp'].includes(biome.id))
+        .map(biome => biome.id);
+    }
+
+    super({
+      id: 'mangrove_tree',
+      name: 'Mangrove Tree',
+      rarity: 0.8,
+      minDistance: 5,
+      validBiomes: validBiomes,
+      yOffset: 0,
+      pattern: [
+        ['air', 'oak_leaves', 'oak_leaves', 'oak_leaves', 'air'],
+        ['oak_leaves', 'oak_leaves', 'oak_leaves', 'oak_leaves', 'oak_leaves'],
+        ['vine', 'oak_leaves', 'oak_log', 'oak_leaves', 'vine'],
+        ['air', 'vine', 'oak_log', 'vine', 'air'],
+        ['air', 'air', 'oak_log', 'air', 'air'],
+        ['air', 'oak_log', 'oak_log', 'oak_log', 'air'],
+        ['oak_log', 'air', 'air', 'air', 'oak_log']
+      ]
+    });
+  }
+}
+
+class RedMushroomHuge extends PatternStructure {
+  constructor(biomeManager?: BiomeManager) {
+    let validBiomes = ['mushroom'];
+    if (biomeManager) {
+      validBiomes = biomeManager.getAllBiomes()
+        .filter(biome => ['mushroom'].includes(biome.id))
+        .map(biome => biome.id);
+    }
+
+    super({
+      id: 'red_mushroom_huge',
+      name: 'Giant Red Mushroom',
+      rarity: 0.7,
+      minDistance: 8,
+      validBiomes: validBiomes,
+      yOffset: 0,
+      pattern: [
+        ['red_mushroom_block', 'red_mushroom_block', 'red_mushroom_block', 'red_mushroom_block', 'red_mushroom_block'],
+        ['red_mushroom_block', 'red_mushroom_block', 'red_mushroom_block', 'red_mushroom_block', 'red_mushroom_block'],
+        ['red_mushroom_block', 'red_mushroom_block', 'red_mushroom_block', 'red_mushroom_block', 'red_mushroom_block'],
+        ['air', 'air', 'mushroom_stem', 'air', 'air'],
+        ['air', 'air', 'mushroom_stem', 'air', 'air'],
+        ['air', 'air', 'mushroom_stem', 'air', 'air']
+      ]
+    });
+  }
+}
+
+class BrownMushroomHuge extends PatternStructure {
+  constructor(biomeManager?: BiomeManager) {
+    let validBiomes = ['mushroom'];
+    if (biomeManager) {
+      validBiomes = biomeManager.getAllBiomes()
+        .filter(biome => ['mushroom'].includes(biome.id))
+        .map(biome => biome.id);
+    }
+
+    super({
+      id: 'brown_mushroom_huge',
+      name: 'Giant Brown Mushroom',
+      rarity: 0.7,
+      minDistance: 8,
+      validBiomes: validBiomes,
+      yOffset: 0,
+      pattern: [
+        ['air', 'brown_mushroom_block', 'brown_mushroom_block', 'brown_mushroom_block', 'air'],
+        ['brown_mushroom_block', 'brown_mushroom_block', 'brown_mushroom_block', 'brown_mushroom_block', 'brown_mushroom_block'],
+        ['brown_mushroom_block', 'brown_mushroom_block', 'mushroom_stem', 'brown_mushroom_block', 'brown_mushroom_block'],
+        ['air', 'air', 'mushroom_stem', 'air', 'air'],
+        ['air', 'air', 'mushroom_stem', 'air', 'air'],
+        ['air', 'air', 'mushroom_stem', 'air', 'air']
+      ]
+    });
+  }
+}
+
+class GlowingMushroom extends PatternStructure {
+  constructor(biomeManager?: BiomeManager) {
+    let validBiomes = ['mushroom'];
+    if (biomeManager) {
+      validBiomes = biomeManager.getAllBiomes()
+        .filter(biome => ['mushroom'].includes(biome.id))
+        .map(biome => biome.id);
+    }
+
+    super({
+      id: 'glowing_mushroom',
+      name: 'Glowing Mushroom',
+      rarity: 0.85,
+      minDistance: 4,
+      validBiomes: validBiomes,
+      yOffset: 0,
+      pattern: [
+        ['air', 'shroomlight', 'shroomlight', 'shroomlight', 'air'],
+        ['shroomlight', 'shroomlight', 'shroomlight', 'shroomlight', 'shroomlight'],
+        ['air', 'air', 'mushroom_stem', 'air', 'air'],
+        ['air', 'air', 'mushroom_stem', 'air', 'air']
+      ]
+    });
+  }
+}
+
+class DeadTree extends PatternStructure {
+  constructor(biomeManager?: BiomeManager) {
+    let validBiomes = ['badlands', 'savanna'];
+    if (biomeManager) {
+      validBiomes = biomeManager.getAllBiomes()
+        .filter(biome => ['badlands', 'savanna'].includes(biome.id))
+        .map(biome => biome.id);
+    }
+
+    super({
+      id: 'dead_tree',
+      name: 'Dead Tree',
+      rarity: 0.9,
+      minDistance: 7,
+      validBiomes: validBiomes,
+      yOffset: 0,
+      pattern: [
+        ['air', 'air', 'oak_log', 'air', 'air'],
+        ['air', 'oak_log', 'air', 'oak_log', 'air'],
+        ['oak_log', 'air', 'oak_log', 'air', 'oak_log'],
+        ['air', 'air', 'oak_log', 'air', 'air'],
+        ['air', 'air', 'oak_log', 'air', 'air'],
+        ['air', 'air', 'oak_log', 'air', 'air']
+      ]
+    });
+  }
+}
+
+class SavannaTree extends PatternStructure {
+  constructor(biomeManager?: BiomeManager) {
+    let validBiomes = ['savanna'];
+    if (biomeManager) {
+      validBiomes = biomeManager.getAllBiomes()
+        .filter(biome => ['savanna'].includes(biome.id))
+        .map(biome => biome.id);
+    }
+
+    super({
+      id: 'savanna_tree',
+      name: 'Savanna Tree',
+      rarity: 0.8,
+      minDistance: 10,
+      validBiomes: validBiomes,
+      yOffset: 0,
+      pattern: [
+        ['air', 'air', 'air', 'acacia_leaves', 'acacia_leaves', 'air', 'air'],
+        ['air', 'air', 'acacia_leaves', 'acacia_leaves', 'acacia_leaves', 'acacia_leaves', 'air'],
+        ['air', 'acacia_leaves', 'acacia_leaves', 'acacia_leaves', 'acacia_leaves', 'acacia_leaves', 'air'],
+        ['acacia_leaves', 'acacia_leaves', 'acacia_leaves', 'acacia_log', 'acacia_leaves', 'air', 'air'],
+        ['air', 'air', 'air', 'acacia_log', 'air', 'air', 'air'],
+        ['air', 'air', 'air', 'acacia_log', 'air', 'air', 'air'],
+        ['air', 'air', 'air', 'acacia_log', 'air', 'air', 'air'],
+        ['air', 'air', 'air', 'acacia_log', 'air', 'air', 'air']
+      ]
+    });
+  }
+}
+
+class BerryBush extends PatternStructure {
+  constructor(biomeManager?: BiomeManager) {
+    let validBiomes = ['taiga'];
+    if (biomeManager) {
+      validBiomes = biomeManager.getAllBiomes()
+        .filter(biome => ['taiga'].includes(biome.id))
+        .map(biome => biome.id);
+    }
+
+    super({
+      id: 'berry_bush',
+      name: 'Sweet Berry Bush',
+      rarity: 0.75,
+      minDistance: 2,
+      validBiomes: validBiomes,
+      yOffset: 0,
+      pattern: [
+        ['sweet_berry_bush', 'sweet_berry_bush', 'sweet_berry_bush'],
+        ['sweet_berry_bush', 'sweet_berry_bush', 'sweet_berry_bush']
+      ]
+    });
+  }
+}
+
+class BadlandsPillar extends PatternStructure {
+  constructor(biomeManager?: BiomeManager) {
+    let validBiomes = ['badlands'];
+    if (biomeManager) {
+      validBiomes = biomeManager.getAllBiomes()
+        .filter(biome => ['badlands'].includes(biome.id))
+        .map(biome => biome.id);
+    }
+
+    super({
+      id: 'terracotta_pillar',
+      name: 'Terracotta Pillar',
+      rarity: 0.93,
+      minDistance: 15,
+      validBiomes: validBiomes,
+      yOffset: 0,
+      pattern: [
+        ['terracotta', 'orange_terracotta', 'terracotta'],
+        ['red_terracotta', 'terracotta', 'red_terracotta'],
+        ['terracotta', 'yellow_terracotta', 'terracotta'],
+        ['orange_terracotta', 'terracotta', 'orange_terracotta'],
+        ['terracotta', 'red_terracotta', 'terracotta'],
+        ['yellow_terracotta', 'terracotta', 'yellow_terracotta'],
+        ['terracotta', 'orange_terracotta', 'terracotta']
+      ]
+    });
+  }
+}
+
 const Trees = [
   OakTree,
   BirchTree,
@@ -217,6 +533,17 @@ const Trees = [
   JungleTree,
   DarkOakTree,
   CactusPlant,
+  TallSpruceTree,
+  SnowySpruceTree,
+  SwampWillowTree,
+  MangroveTree,
+  RedMushroomHuge,
+  BrownMushroomHuge,
+  GlowingMushroom,
+  DeadTree,
+  SavannaTree,
+  BerryBush,
+  BadlandsPillar
 ];
 
 export default Trees;
